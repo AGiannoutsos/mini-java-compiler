@@ -1,0 +1,8 @@
+syntaxtree/*
+visitor/*
+Mini*
+Token*
+Parse*
+JavaChar*
+*.class
+src/*.class
