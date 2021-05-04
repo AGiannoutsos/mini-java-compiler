@@ -4,19 +4,22 @@ import java.util.Map;
 
 public class SymbolMethod extends Symbol{
 
+    SymbolClass methodClass;
     SymbolTable arguments;
     SymbolTable variables;
 
-    public SymbolMethod(String type, String name, boolean overrided){
+    public SymbolMethod(String type, String name, boolean overrided, SymbolClass methodClass){
         super(type, name, overrided);
         this.arguments = new SymbolTable();
         this.variables = new SymbolTable();
+        this.methodClass =  methodClass;
     }
 
-    public SymbolMethod(String type, String name, int offset, boolean overrided){
+    public SymbolMethod(String type, String name, int offset, boolean overrided, SymbolClass methodClass){
         super(type, name, offset, overrided);
         this.arguments = new SymbolTable();
         this.variables = new SymbolTable();
+        this.methodClass =  methodClass;
     }
 
     @Override
@@ -43,6 +46,20 @@ public class SymbolMethod extends Symbol{
             return arg;
         if (var != null)
             return var;
+
+        return null;
+    }
+
+    @Override
+    public Symbol getVariable_r(String key) {
+
+        SymbolVariable varMethod = (SymbolVariable)this.getVariable(key);
+        System.out.println(varMethod);
+        if (varMethod != null)
+            return varMethod;
+            varMethod = (SymbolVariable)this.methodClass.getVariable_r(key);
+            if (varMethod != null)
+            return varMethod;
 
         return null;
     }

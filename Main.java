@@ -10,7 +10,7 @@ import java.io.IOException;
 
 public class Main {
     public static void main(String[] args) throws Exception {
-        if(args.length != 1){
+        if(args.length == 0){
             System.err.println("Usage: java Main <inputFile1> <inputFile3> <inputFile3> ...");
             System.exit(1);
         }
@@ -26,24 +26,22 @@ public class Main {
                 Goal root = parser.Goal();
                 System.err.println("Program ("+ arg +") parsed successfully.");
     
-                
-                // MyVisitor eval = new MyVisitor();
-                // root.accept(eval, null);
+                // Symbol table init
                 SymbolTable table = new SymbolTable(arg);
-                //
                 
                 // Check Class Declarations
                 ClassVisitor classVisitor = new ClassVisitor(table);
                 root.accept(classVisitor, null);
-                System.out.println(table);
     
                 // Fill Class Methods and Fields
                 FillVisitor fillVisitor = new FillVisitor(table);
                 root.accept(fillVisitor, null);
                 System.out.println(table);
     
-    
                 // Type check
+                CheckTypeVisitor checkTypeVisitor = new CheckTypeVisitor(table);
+                root.accept(checkTypeVisitor, null);
+
     
             }
             catch(ParseException ex){

@@ -48,7 +48,7 @@ abstract public class Symbol{
     }
 
     public String toString() {
-        return this.name+" : "+this.offset+"\n";
+        return this.name+" : "+this.offset;
     }
 
     public Symbol putVariable(String key, Symbol variable) {return variable;}
@@ -59,7 +59,11 @@ abstract public class Symbol{
 
     public Symbol getVariable(String key) {return null;}
 
+    public Symbol getVariable_r(String key) {return null;}
+
     public Symbol getMethod(String key) {return null;}
+
+    public Symbol getMethod_r(String key) {return null;}
 
     public Symbol getArgument(String key) {return null;}
 

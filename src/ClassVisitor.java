@@ -10,11 +10,8 @@ public class ClassVisitor extends GJDepthFirst<String, String> {
     int classOffsset;
 
     public ClassVisitor(SymbolTable table) throws Exception {
-
-        System.out.println("naii helooo");
         this.table = table;
         this.classOffsset = 0;
-
     }
 
 

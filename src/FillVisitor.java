@@ -11,8 +11,6 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
 
 
     public FillVisitor(SymbolTable table) throws Exception {
-
-        System.out.println("naii helooo");
         this.table = table;
         this.classOffsset = 0;
     }
@@ -131,15 +129,14 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
         if (currentScope.getMethod(name) != null)
             throw new Exception("Method "+name+" already declared in "+currentScope);
         // ckeck for overriding
-        // SymbolMethod currentMethod;
-        SymbolClass currentClass = (SymbolClass)currentScope;
         SymbolMethod currentMethod;
+        SymbolClass currentClass = (SymbolClass)currentScope;
         if ((currentClass.parentClass == null ) || (currentClass.parentClass.getMethod(name) == null))
-            currentMethod = new SymbolMethod(type, name, false);
+            currentMethod = new SymbolMethod(type, name, false, currentClass);
         else
-            currentMethod = new SymbolMethod(type, name, true); // overrided  
+            currentMethod = new SymbolMethod(type, name, true, currentClass); // overrided  
             
-        currentScope.putMethod(name, currentMethod);
+        currentClass.putMethod(name, currentMethod);
 
         // fill parameters
         if (n.f4.present())
@@ -148,8 +145,7 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
         // fill variable declarations
         if (n.f7.present())
             n.f7.accept(this, currentMethod);
-        currentMethod.print();
-
+        // currentMethod.print();
 
         return null;
     }
@@ -179,20 +175,25 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
 
         SymbolClass mainClass = (SymbolClass) table.get(n.f1.accept(this, null));
         // fill main method
-        SymbolMethod mainMethod = new SymbolMethod("void", "main", false);
-        if ( mainClass.methods.put("main", mainMethod) != null )
+        if ( mainClass.getMethod("main") != null )
             throw new Exception("main method is already declared");
 
-        // fill argument
+        SymbolMethod mainMethod = new SymbolMethod("void", "main", false, mainClass);
+        mainClass.putMethod("main", mainMethod);
+
+        // fill arguments
         String argument = n.f11.accept(this, null);
-        SymbolVariable mainArgument = new SymbolVariable("void", argument);
-        if ( mainMethod.arguments.put("main", mainMethod) != null )
+        if ( mainMethod.getArgument(argument) != null )
             throw new Exception("main argument is already declared");
         
-
-        // fill var declarations
+        SymbolVariable mainArgument = new SymbolVariable("void", argument);
+        mainMethod.putArgument(argument, mainArgument);
+        
+        // fill variable declarations
         if (n.f14.present())
-            n.f14.accept(this, mainClass);
+            n.f14.accept(this, mainMethod);
+        // mainMethod.print();
+        
 
         return null;
     }
@@ -209,8 +210,6 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
     public String visit(ClassDeclaration n, Symbol currentScope) throws Exception {
 
         SymbolClass currentClass = (SymbolClass)table.get(n.f1.accept(this, null));
-        // System.out.println(currentClass);
-
 
         // fill class variable declarations
         if (n.f3.present())
@@ -219,9 +218,6 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
         // fill methods
         if (n.f4.present())
             n.f4.accept(this, currentClass);
-
-
-
         
         return null;
      }
@@ -249,8 +245,6 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
         if (n.f6.present())
             n.f6.accept(this, currentClass);
 
-
-        
         return null;
      }
 

@@ -48,6 +48,7 @@ public class SymbolTable extends TreeMap<String, Symbol>{
     @Override
     public String toString(){
         String string = "";
+        string += "------------------------------------------------------------------\n-----------File " + this.name+"-----------\n------------------------------------------------------------------\n\n";
         for (Map.Entry<String, Symbol> entry : this.getSorted()) {
             string += entry.getValue().toString() +"\n";
         }

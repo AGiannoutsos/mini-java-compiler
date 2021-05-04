@@ -9,8 +9,10 @@ class A {
     A a;
     A aa;
     A aaa;
+    C c;
+    B b;
 
-    public int foo(int i, int j) {int k; int kk; int klk;  return i+j; }
+    public int foo(int i, int j) {int k; int kk; int klk; a = this;  return i+j; }
     public int bar(){ return 1; }
 }
 
@@ -36,7 +38,8 @@ class D {
 class B extends A {
     int i;
     boolean k;
+    A a;
 
     public int foo(int i, int j, boolean ii) {boolean iii; return i+j; }
-    public int foobar(boolean k){ return 1; }
+    public int foobar(boolean k){ B aa; a = this; return 1; }
 }
