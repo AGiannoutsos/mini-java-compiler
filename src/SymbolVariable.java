@@ -10,5 +10,8 @@ public class SymbolVariable extends Symbol{
         super(type, name);
     }
 
-    
+    public String print(){
+        return this.type + " " + this.name;
+    }
+
 }

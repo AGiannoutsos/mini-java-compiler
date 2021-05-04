@@ -41,7 +41,6 @@ public class Main {
                 FillVisitor fillVisitor = new FillVisitor(table);
                 root.accept(fillVisitor, null);
                 System.out.println(table);
-
     
     
                 // Type check

@@ -1,6 +1,6 @@
 package src;
 
-public class Symbol{
+abstract public class Symbol{
 
     String type;
     String name;
@@ -54,5 +54,14 @@ public class Symbol{
     public Symbol putVariable(String key, Symbol variable) {return variable;}
 
     public Symbol putMethod(String key, Symbol method) {return method;}
+
+    public Symbol putArgument(String key, Symbol argument) {return argument;}
+
+    public Symbol getVariable(String key) {return null;}
+
+    public Symbol getMethod(String key) {return null;}
+
+    public Symbol getArgument(String key) {return null;}
+
 
 }

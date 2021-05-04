@@ -14,11 +14,6 @@ public class ClassVisitor extends GJDepthFirst<String, String> {
         System.out.println("naii helooo");
         this.table = table;
         this.classOffsset = 0;
-        // System.out.println(table.put("Examplee", new Class("ena")));
-
-        // // System.out.println(table.put("aa", new Class("ena")));
-
-        // System.out.println(table.get("aaa"));
 
     }
 

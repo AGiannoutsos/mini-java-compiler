@@ -55,6 +55,19 @@ public class SymbolClass extends Symbol{
                 if (!(entry.getValue().overrided))
                     string += this.name+"." + entry.getValue().toString();
         }
+        // debug
+        // string += this.debugPrint();
+        return string;
+    }
+
+    public String debugPrint() {
+        String string = "";
+        if (parentClass!=null){
+            for (Map.Entry<String, Symbol> entry : this.parentClass.methods.getSorted())
+                string += this.name+"." +entry.getValue().toString();
+        }
+        for (Map.Entry<String, Symbol> entry : this.methods.getSorted())
+            string += this.name+"." +entry.getValue().toString();
         return string;
     }
 
@@ -92,6 +105,16 @@ public class SymbolClass extends Symbol{
         Symbol s = methods.put(key, new SymbolMethod(meth.type, meth.name, this.totalMethodsOffset, meth.overrided));
         this.methodsOffset += offset;
         return s;
+    }
+
+    @Override
+    public Symbol getMethod(String key){
+        return this.methods.get(key);
+    }
+
+    @Override
+    public Symbol getVariable(String key){
+        return this.variables.get(key);
     }
 
 
