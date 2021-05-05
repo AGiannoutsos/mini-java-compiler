@@ -72,6 +72,8 @@ public class SymbolMethod extends Symbol{
         return string;
     }
 
+
+
     public String print(){
         String string = "";
         string += this.name+"(";

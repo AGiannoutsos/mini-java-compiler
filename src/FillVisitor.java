@@ -8,11 +8,13 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
 
     SymbolTable table;
     int classOffsset;
+    int argumentVarOffsset;
 
 
     public FillVisitor(SymbolTable table) throws Exception {
         this.table = table;
         this.classOffsset = 0;
+        this.argumentVarOffsset = 0;
     }
 
 
@@ -36,7 +38,7 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
         if ( currentScope.getVariable(name) != null)
            throw new Exception("Variable "+type+" "+name+" already declared in "+currentScope.name+"()");
         
-        currentScope.putVariable(name, new SymbolVariable(type, name, 0));
+        currentScope.putVariable(name, new SymbolVariable(type, name, this.argumentVarOffsset++));
 
         return null;
     }
@@ -99,7 +101,7 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
         if (currentScope.getArgument(name) != null)
             throw new Exception("Argument "+name+" already declared in "+currentScope.name+"()");
         
-		SymbolVariable argument = new SymbolVariable(type, name);
+		SymbolVariable argument = new SymbolVariable(type, name, this.argumentVarOffsset++);
         currentScope.putArgument(name, argument);
 
 		return null;
@@ -139,10 +141,12 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
         currentClass.putMethod(name, currentMethod);
 
         // fill parameters
+        this.argumentVarOffsset = 0;
         if (n.f4.present())
             n.f4.accept(this, currentMethod);
             
         // fill variable declarations
+        this.argumentVarOffsset = 0;
         if (n.f7.present())
             n.f7.accept(this, currentMethod);
         // currentMethod.print();

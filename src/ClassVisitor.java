@@ -46,7 +46,7 @@ public class ClassVisitor extends GJDepthFirst<String, String> {
         String classname = n.f1.accept(this, null);
         SymbolClass mainClass = new SymbolClass(classname, this.classOffsset);
         if ( table.put(classname, mainClass) != null )
-            throw new Exception(mainClass+" is already declared");
+            throw new Exception(mainClass.name+" is already declared");
         this.classOffsset++;
         return null;
     }
@@ -65,7 +65,7 @@ public class ClassVisitor extends GJDepthFirst<String, String> {
         String classname = n.f1.accept(this, null);
         SymbolClass classDeclaration = new SymbolClass(classname, this.classOffsset);
         if ( table.put(classname, classDeclaration) != null )
-            throw new Exception(classDeclaration+" is already declared");
+            throw new Exception(classDeclaration.name+" is already declared");
         this.classOffsset++;
         
         return null;
@@ -90,13 +90,13 @@ public class ClassVisitor extends GJDepthFirst<String, String> {
         // cjeck if parent class exists
         SymbolClass parentClass = (SymbolClass) table.get(parentClassname);
         if ( parentClass == null )
-            throw new Exception("Parent "+parentClassname+" in "+classname+" is not declared");
+            throw new Exception("Parent Class "+parentClassname+" in Class "+classname+" is not declared");
         
         SymbolClass classExtendsDeclaration = new SymbolClass(classname, parentClass, this.classOffsset);
 
         // check if class already declared
         if ( table.put(classname, classExtendsDeclaration) != null )
-            throw new Exception(classExtendsDeclaration+" is already declared");
+            throw new Exception(classExtendsDeclaration.name+" is already declared");
         this.classOffsset++;
         
         return null;
