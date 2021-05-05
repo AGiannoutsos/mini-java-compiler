@@ -30,6 +30,14 @@ public class SymbolTable extends TreeMap<String, Symbol>{
         this.name = null;
     }
 
+    // public Symbol get(String key){
+    //     System.out.println("oeorerer");
+    //     if (key.startsWith("Class "))
+    //         return super.get(key.replaceFirst("Class ", ""));
+    //     else    
+    //         return super.get(key);
+    // }
+
     // code from here https://stackoverflow.com/questions/2864840/treemap-sort-by-value
     // erwthsh giati uparxei h java? 
     public SortedSet<Map.Entry<String, Symbol>> getSorted(){

@@ -34,7 +34,7 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
         String name = n.f1.accept(this, currentScope);
 
         if ( currentScope.getVariable(name) != null)
-           throw new Exception("Variable "+type+" "+name+" already declared in "+currentScope);
+           throw new Exception("Variable "+type+" "+name+" already declared in "+currentScope.name+"()");
         
         currentScope.putVariable(name, new SymbolVariable(type, name, 0));
 
@@ -97,7 +97,7 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
 		String name = n.f1.accept(this, currentScope);
         
         if (currentScope.getArgument(name) != null)
-            throw new Exception("Argument "+name+" already declared in "+currentScope);
+            throw new Exception("Argument "+name+" already declared in "+currentScope.name+"()");
         
 		SymbolVariable argument = new SymbolVariable(type, name);
         currentScope.putArgument(name, argument);
@@ -127,7 +127,7 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
 
         // check scope of method
         if (currentScope.getMethod(name) != null)
-            throw new Exception("Method "+name+" already declared in "+currentScope);
+            throw new Exception("Method "+name+"() already declared in Class "+currentScope.name);
         // ckeck for overriding
         SymbolMethod currentMethod;
         SymbolClass currentClass = (SymbolClass)currentScope;

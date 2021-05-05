@@ -54,7 +54,6 @@ public class SymbolMethod extends Symbol{
     public Symbol getVariable_r(String key) {
 
         SymbolVariable varMethod = (SymbolVariable)this.getVariable(key);
-        System.out.println(varMethod);
         if (varMethod != null)
             return varMethod;
             varMethod = (SymbolVariable)this.methodClass.getVariable_r(key);
@@ -62,6 +61,15 @@ public class SymbolMethod extends Symbol{
             return varMethod;
 
         return null;
+    }
+
+    public String getStringArguments(){
+        String string = "";
+        for (Map.Entry<String, Symbol> entry : this.arguments.getSorted()) 
+                string += entry.getValue().type + ", ";
+        if(string.endsWith(", ")) 
+            string = string.substring(0, string.length() - 2);
+        return string;
     }
 
     public String print(){

@@ -3,17 +3,21 @@ package src;
 import syntaxtree.*;
 import visitor.*;
 import java.util.Map;
+import java.util.ArrayDeque;
+import java.util.Deque;
 
 
 public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
 
     SymbolTable table;
     int classOffsset;
+    Deque<String> argumentStack;
 
 
     public CheckTypeVisitor(SymbolTable table) throws Exception {
         this.table = table;
         this.classOffsset = 0;
+        this.argumentStack = new ArrayDeque<String>();
     }
 
     public boolean checkType(Symbol symbol, String type){
@@ -35,11 +39,7 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
 
     @Override
     public String visit(Identifier n, Symbol currentScope) throws Exception {
-        // in type checking identifiers = types
-        // String identifier = n.f0.toString();
-        // SymbolVariable currentVariable = (SymbolVariable)currentScope.getVariable_r(identifier);
-        // return currentVariable.type;
-        ////////////////////////////////////////
+        return n.f0.toString();
     }
 
     /**
@@ -130,14 +130,97 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
         String name = n.f0.accept(this, currentScope);
         SymbolVariable currentVariable = (SymbolVariable) currentScope.getVariable_r(name);
         if (currentVariable == null)
-            throw new Exception("Unknown identifier at assignment in "+currentScope);
+            throw new Exception("Unknown Identifier "+name+" at Assignment in "+currentScope.name+"()");
 
         // get expression type
         String expressionType = n.f2.accept(this, currentScope);
-
+        // System.out.println(expressionType);
         // check type
         if (!checkType(currentVariable, expressionType))
-            throw new Exception("Wrong type assignment in "+currentScope);
+            throw new Exception("Wrong type "+expressionType+" at Assignment in "+currentScope.name+"()");
+        return null;
+    }
+
+    /**
+    * f0 -> Identifier()
+    * f1 -> "["
+    * f2 -> Expression()
+    * f3 -> "]"
+    * f4 -> "="
+    * f5 -> Expression()
+    * f6 -> ";"
+    */
+    public String visit(ArrayAssignmentStatement n, Symbol currentScope) throws Exception {
+        String name = n.f0.accept(this, currentScope);
+        SymbolVariable currentVariable = (SymbolVariable) currentScope.getVariable_r(name);
+        if (currentVariable == null)
+            throw new Exception("Unknown Identifier "+name+" at Array Assignment in "+currentScope.name+"()");
+
+        // check for identifier type
+        if (!checkType(currentVariable, Symbol.ARR))
+            throw new Exception("Wrong type "+currentVariable.type+" at Array Assignment in "+currentScope.name+"()");
+        
+        // check index expression type
+        String expressionType = n.f2.accept(this, currentScope);
+        if (!expressionType.equals(Symbol.INT))
+            throw new Exception("Wrong expression type "+expressionType+" at Array Assignment index in "+currentScope.name+"()");
+
+        // check assignment expression type
+        String returnExpressionType = n.f5.accept(this, currentScope);
+        if (!returnExpressionType.equals(Symbol.INT))
+            throw new Exception("Wrong assignment expression type "+returnExpressionType+" at Array Assignment in "+currentScope.name+"()");
+
+        return null;
+    }
+
+    /**
+     * f0 -> "if"
+    * f1 -> "("
+    * f2 -> Expression()
+    * f3 -> ")"
+    * f4 -> Statement()
+    * f5 -> "else"
+    * f6 -> Statement()
+    */
+    public String visit(IfStatement n, Symbol currentScope) throws Exception {
+        // check index expression type
+        String expressionType = n.f2.accept(this, currentScope);
+        if (!expressionType.equals(Symbol.BOOL))
+            throw new Exception("Wrong expression type "+expressionType+" at If Statement "+currentScope.name+"()");
+        n.f4.accept(this, currentScope);
+        n.f6.accept(this, currentScope);
+        return null;
+    }
+
+    /**
+     * f0 -> "while"
+    * f1 -> "("
+    * f2 -> Expression()
+    * f3 -> ")"
+    * f4 -> Statement()
+    */
+    public String visit(WhileStatement n, Symbol currentScope) throws Exception {
+        // check index expression type
+        String expressionType = n.f2.accept(this, currentScope);
+        if (!expressionType.equals(Symbol.BOOL))
+            throw new Exception("Wrong expression type "+expressionType+" at While Statement "+currentScope.name+"()");
+        n.f4.accept(this, currentScope);
+        return null;
+    }
+
+    /**
+     * f0 -> "System.out.println"
+    * f1 -> "("
+    * f2 -> Expression()
+    * f3 -> ")"
+    * f4 -> ";"
+    */
+    public String visit(PrintStatement n, Symbol currentScope) throws Exception {
+        // check index expression type
+        String expressionType = n.f2.accept(this, currentScope);
+        if (!expressionType.equals(Symbol.INT))
+            throw new Exception("Wrong expression type "+expressionType+" at Print Statement "+currentScope.name+"()");
+        n.f4.accept(this, currentScope);
         return null;
     }
 
@@ -162,11 +245,13 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
     * f2 -> PrimaryExpression()
     */
     public String visit(AndExpression n, Symbol currentScope) throws Exception {
+        String type1 = n.f0.accept(this, currentScope);
+        String type2 = n.f2.accept(this, currentScope);
 
-        n.f0.accept(this, currentScope);
-        n.f1.accept(this, currentScope);
-        n.f2.accept(this, currentScope);
-        return null;
+        if (type1.equals(Symbol.BOOL) && type2.equals(Symbol.BOOL))
+            return Symbol.BOOL;
+        else
+            throw new Exception("Wrong type "+type1+" && "+type2+" at And Expression in "+currentScope);
     }
 
     /**
@@ -175,11 +260,13 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
     * f2 -> PrimaryExpression()
     */
     public String visit(CompareExpression n, Symbol currentScope) throws Exception {
+        String type1 = n.f0.accept(this, currentScope);
+        String type2 = n.f2.accept(this, currentScope);
 
-        n.f0.accept(this, currentScope);
-        n.f1.accept(this, currentScope);
-        n.f2.accept(this, currentScope);
-        return null;
+        if (type1.equals(Symbol.INT) && type2.equals(Symbol.INT))
+            return Symbol.BOOL;
+        else
+            throw new Exception("Wrong type "+type1+" < "+type2+" at Copmare Expression in "+currentScope);
     }
 
     /**
@@ -188,11 +275,13 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
     * f2 -> PrimaryExpression()
     */
     public String visit(PlusExpression n, Symbol currentScope) throws Exception {
+        String type1 = n.f0.accept(this, currentScope);
+        String type2 = n.f2.accept(this, currentScope);
 
-        n.f0.accept(this, currentScope);
-        n.f1.accept(this, currentScope);
-        n.f2.accept(this, currentScope);
-        return null;
+        if (type1.equals(Symbol.INT) && type2.equals(Symbol.INT))
+            return Symbol.INT;
+        else
+            throw new Exception("Wrong type "+type1+" + "+type2+" at Plus Expression in "+currentScope);
     }
 
     /**
@@ -201,11 +290,13 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
     * f2 -> PrimaryExpression()
     */
     public String visit(MinusExpression n, Symbol currentScope) throws Exception {
+        String type1 = n.f0.accept(this, currentScope);
+        String type2 = n.f2.accept(this, currentScope);
 
-        n.f0.accept(this, currentScope);
-        n.f1.accept(this, currentScope);
-        n.f2.accept(this, currentScope);
-        return null;
+        if (type1.equals(Symbol.INT) && type2.equals(Symbol.INT))
+            return Symbol.INT;
+        else
+            throw new Exception("Wrong type "+type1+" - "+type2+" at Minus Expression in "+currentScope);
     }
 
     /**
@@ -214,11 +305,13 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
     * f2 -> PrimaryExpression()
     */
     public String visit(TimesExpression n, Symbol currentScope) throws Exception {
-    
-        n.f0.accept(this, currentScope);
-        n.f1.accept(this, currentScope);
-        n.f2.accept(this, currentScope);
-        return null;
+        String type1 = n.f0.accept(this, currentScope);
+        String type2 = n.f2.accept(this, currentScope);
+
+        if (type1.equals(Symbol.INT) && type2.equals(Symbol.INT))
+            return Symbol.INT;
+        else
+            throw new Exception("Wrong type "+type1+" * "+type2+" at Times Expression in "+currentScope);
     }
 
     /**
@@ -228,12 +321,13 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
     * f3 -> "]"
     */
     public String visit(ArrayLookup n, Symbol currentScope) throws Exception {
-    
-        n.f0.accept(this, currentScope);
-        n.f1.accept(this, currentScope);
-        n.f2.accept(this, currentScope);
-        n.f3.accept(this, currentScope);
-        return null;
+        String type1 = n.f0.accept(this, currentScope);
+        String type2 = n.f2.accept(this, currentScope);
+
+        if (type1.equals(Symbol.ARR) && type2.equals(Symbol.INT))
+            return Symbol.INT;
+        else
+            throw new Exception("Wrong type "+type1+"["+type2+"] at Array Lookup Expression in "+currentScope);
     }
 
     /**
@@ -242,12 +336,40 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
     * f2 -> "length"
     */
     public String visit(ArrayLength n, Symbol currentScope) throws Exception {
-    
-        n.f0.accept(this, currentScope);
-        n.f1.accept(this, currentScope);
-        n.f2.accept(this, currentScope);
-        return null;
+        String type1 = n.f0.accept(this, currentScope);
+
+        if (type1.equals(Symbol.ARR))
+            return Symbol.INT;
+        else
+            throw new Exception("Wrong type "+type1+" at Array Length Expression in "+currentScope);
     }
+
+    /**
+    * f0 -> Expression()
+    * f1 -> ExpressionTail()
+    */
+    public String visit(ExpressionList n, Symbol currentScope) throws Exception {
+        String argumentsTypes = n.f0.accept(this, currentScope);
+        argumentStack.push(argumentsTypes);
+        // get the rest parameters
+        n.f1.accept(this, currentScope);
+        // pop last from stack
+        return argumentStack.pop();
+    }
+
+    /**
+     * f0 -> ","
+    * f1 -> Expression()
+    */
+    public String visit(ExpressionTerm n, Symbol currentScope) throws Exception {
+        // String type = n.f1.accept(this, currentScope);
+        // System.out.println(type);
+        String argumentsTypes = argumentStack.pop();
+        argumentsTypes += ", " + n.f1.accept(this, currentScope);
+        argumentStack.push(argumentsTypes);
+        return argumentsTypes;
+    }
+
 
     /**
      * f0 -> PrimaryExpression()
@@ -258,14 +380,33 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
     * f5 -> ")"
     */
     public String visit(MessageSend n, Symbol currentScope) throws Exception {
-    
-        n.f0.accept(this, currentScope);
-        n.f1.accept(this, currentScope);
-        n.f2.accept(this, currentScope);
-        n.f3.accept(this, currentScope);
-        n.f4.accept(this, currentScope);
-        n.f5.accept(this, currentScope);
-        return null;
+
+        // check if primary expression is class type
+        String type = n.f0.accept(this, currentScope);
+        SymbolClass currentClass = (SymbolClass) table.get(type);
+        if (currentClass == null) 
+            throw new Exception("Operator . unavailable on type: "+type+" in "+currentScope);
+        
+        // check if method is availble on that class
+        String method = n.f2.accept(this, currentScope);
+        SymbolMethod currentMethod = (SymbolMethod) currentClass.getMethod_r(method);
+        if (currentMethod == null) 
+            throw new Exception("Method "+method+"() is unavailable on type: "+type+" in "+currentScope);
+        
+
+        // check for arguments on method
+        String argumentString = "";
+        String declaredArgumentString = currentMethod.getStringArguments();
+        if (n.f4.present()) 
+            argumentString = n.f4.accept(this, currentScope);
+
+        // System.out.println(argumentString);
+        // System.out.println(declaredArgumentString);
+        if (!declaredArgumentString.equals(argumentString))
+            throw new Exception("Argument types do not match at Method "+method+"() in "+currentScope);
+
+        
+        return currentMethod.type;
     }
 
     /**
@@ -281,10 +422,29 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
     */
     public String visit(PrimaryExpression n, Symbol currentScope) throws Exception {
         // check for type of primary expression
-        // if type is not known then type is from identifier
+        String type = n.f0.accept(this, currentScope);
+        if (type.equals(Symbol.INT) || type.equals(Symbol.BOOL) || type.equals(Symbol.ARR)){
+            return type;
+        }
+        // else{
+        //     if (table.get(type) != null)
+        //         return type;
+        // }
+        if (type.startsWith("Class "))
+            if (table.get(type.replaceFirst("Class ", "")) != null)
+                return type.replaceFirst("Class ", "");
+            else
+                throw new Exception("Unknown Expression Identifier: "+type+" type in "+currentScope);
+        // if type is not known then type comes from identifier as variable
         // so we need to look up for it
-        String primaryExpressionType = n.f0.accept(this, currentScope);
-        return ////////////////////////////////////////
+        String identifier = type;
+        SymbolVariable currentVariable = (SymbolVariable)currentScope.getVariable_r(identifier);
+        // if identifier is not defined the type is not known
+        if (currentVariable == null)
+            throw new Exception("Unknown Expression Identifier: "+type+" type in "+currentScope);
+        else
+            return currentVariable.type;
+        
     }
 
     /**
@@ -314,7 +474,7 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
     public String visit(ThisExpression n, Symbol currentScope) throws Exception {
         // this is methodClass type
         SymbolMethod currentMethod = (SymbolMethod)currentScope;
-        return currentMethod.methodClass.type;
+        return "Class "+currentMethod.methodClass.type;
     }
 
     /**
@@ -325,6 +485,9 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
     * f4 -> "]"
     */
     public String visit(ArrayAllocationExpression n, Symbol currentScope) throws Exception {
+        String type = n.f3.accept(this, currentScope);
+        if (type != Symbol.INT)
+            throw new Exception("Expression must be Integer type in Array Allocation in "+currentScope);
         return Symbol.ARR;
     }
 
@@ -335,12 +498,12 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
     * f3 -> ")"
     */
     public String visit(AllocationExpression n, Symbol currentScope) throws Exception {
-        String _ret=null;
-        n.f0.accept(this, currentScope);
-        n.f1.accept(this, currentScope);
-        n.f2.accept(this, currentScope);
-        n.f3.accept(this, currentScope);
-        return _ret;
+        String type = n.f1.accept(this, currentScope);
+        // type must be class type
+        SymbolClass currentClass = (SymbolClass) table.get(type);
+        if (currentClass == null)
+            throw new Exception("Wrong type "+type+" at Allocation Expression in "+currentScope);
+        return "Class "+currentClass.type;
     }
 
     /**
@@ -348,10 +511,10 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
     * f1 -> PrimaryExpression()
     */
     public String visit(NotExpression n, Symbol currentScope) throws Exception {
-        String _ret=null;
-        n.f0.accept(this, currentScope);
-        n.f1.accept(this, currentScope);
-        return _ret;
+        String type = n.f1.accept(this, currentScope);
+        if (type != Symbol.BOOL)
+            throw new Exception("Expression must be boolean type in Not Expression in "+currentScope);
+        return Symbol.BOOL;
     }
 
     /**
@@ -360,30 +523,9 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
     * f2 -> ")"
     */
     public String visit(BracketExpression n, Symbol currentScope) throws Exception {
-        String _ret=null;
-        n.f0.accept(this, currentScope);
-        n.f1.accept(this, currentScope);
-        n.f2.accept(this, currentScope);
-        return _ret;
+        return n.f1.accept(this, currentScope);
     }
 
-    /**
-    * f0 -> Type()
-    * f1 -> Identifier()
-    */
-    // @Override
-    // public String visit(FormalParameter n, Symbol currentScope) throws Exception {
-	// 	String type = n.f0.accept(this, currentScope);
-	// 	String name = n.f1.accept(this, currentScope);
-        
-    //     if (currentScope.getArgument(name) != null)
-    //         throw new Exception("Argument "+name+" already declared in "+currentScope);
-        
-	// 	SymbolVariable argument = new SymbolVariable(type, name);
-    //     currentScope.putArgument(name, argument);
-
-	// 	return null;
-	// }
 
     /**
     * f0 -> "public"
@@ -402,28 +544,22 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
     */
     @Override
     public String visit(MethodDeclaration n, Symbol currentScope) throws Exception {
-        String type = n.f1.accept(this, currentScope);
         String name = n.f2.accept(this, currentScope);
 
         // get symbol method
         SymbolClass currentClass = (SymbolClass)currentScope;
         SymbolMethod currentMethod = (SymbolMethod)currentClass.getMethod_r(name);
         if (currentMethod == null)
-            throw new Exception("Method "+name+" not found in "+currentScope);
-            
-
-        // // fill parameters
-        // if (n.f4.present())
-        //     n.f4.accept(this, currentMethod);
-            
-        // // fill variable declarations
-        // if (n.f7.present())
-        //     n.f7.accept(this, currentMethod);
-        currentMethod.print();
+            throw new Exception("Method "+name+" not found in Class "+currentScope.name);
 
         // check statments
         if (n.f8.present())
             n.f8.accept(this, currentMethod);
+
+        // check for method return type
+        String returnMethodType = n.f10.accept(this, currentMethod);
+        if (!currentMethod.type.equals(returnMethodType))
+            throw new Exception("Wrong return type "+returnMethodType+" while Method "+currentMethod.name+"() returns "+currentMethod.type+" in Class "+currentScope.name);
 
 
         return null;
@@ -452,34 +588,12 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
     @Override
     public String visit(MainClass n, Symbol currentScope) throws Exception {
 
-        // SymbolClass mainClass = (SymbolClass) table.get(n.f1.accept(this, null));
-        // SymbolMethod mainMethod = (SymbolMethod) mainClass.getMethod("main");
-
-        // // fill main method
-        // if ( mainClass.getMethod("main") != null )
-        //     throw new Exception("main method is already declared");
-
-        // SymbolMethod mainMethod = new SymbolMethod("void", "main", false);
-        // mainClass.putMethod("main", mainMethod);
-
-        // // fill arguments
-        // String argument = n.f11.accept(this, null);
-        // if ( mainMethod.getArgument(argument) != null )
-        //     throw new Exception("main argument is already declared");
-        
-        // SymbolVariable mainArgument = new SymbolVariable("void", argument);
-        // mainMethod.putArgument(argument, mainArgument);
-        
-        // // fill variable declarations
-        // if (n.f14.present())
-        //     n.f14.accept(this, mainMethod);
-        // mainMethod.print();
-
-        // check main statments
-        // if (n.f15.present())
-        //     n.f15.accept(this, mainMethod);
-
-        
+        SymbolClass mainClass = (SymbolClass) table.get(n.f1.accept(this, null));
+        SymbolMethod mainMethod = (SymbolMethod) mainClass.getMethod("main");
+           
+        // check statments
+        if (n.f15.present())
+            n.f15.accept(this, mainMethod);
 
         return null;
     }
@@ -496,11 +610,7 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
     public String visit(ClassDeclaration n, Symbol currentScope) throws Exception {
 
         SymbolClass currentClass = (SymbolClass)table.get(n.f1.accept(this, null));
-
-        // // fill class variable declarations
-        // if (n.f3.present())
-        //     n.f3.accept(this, currentClass);
-            
+           
         // check methods
         if (n.f4.present())
             n.f4.accept(this, currentClass);
@@ -522,10 +632,6 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
     public String visit(ClassExtendsDeclaration n, Symbol currentScope) throws Exception {
 
         SymbolClass currentClass = (SymbolClass)table.get(n.f1.accept(this, null));
-
-        // // fill class variable declarations
-        // if (n.f5.present())
-        //     n.f5.accept(this, currentClass);
 
         // ckeck methods
         if (n.f6.present())
