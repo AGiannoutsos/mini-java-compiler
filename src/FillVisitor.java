@@ -190,7 +190,7 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
         if ( mainMethod.getArgument(argument) != null )
             throw new Exception("main argument is already declared");
         
-        SymbolVariable mainArgument = new SymbolVariable("void", argument);
+        SymbolVariable mainArgument = new SymbolVariable("String[]", argument);
         mainMethod.putArgument(argument, mainArgument);
         
         // fill variable declarations

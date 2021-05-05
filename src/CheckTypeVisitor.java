@@ -20,20 +20,26 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
         this.argumentStack = new ArrayDeque<String>();
     }
 
-    public boolean checkType(Symbol symbol, String type){
+    public boolean checkType(Symbol symbol, String type) throws Exception {
         if (type.equals(Symbol.INT) || type.equals(Symbol.BOOL) || type.equals(Symbol.ARR)){
             return symbol.type.equals(type);
         }
         // check for inheritance type, symbol must be a class
         // get the class type of variable
         SymbolClass currentClass = (SymbolClass)table.get(type);
+        if (currentClass == null)
+            throw new Exception("Unknown Identifier type "+type);
         if (currentClass.type.equals(symbol.type))
             return true;
-        else 
-            if (currentClass.parentClass != null)
-                return currentClass.parentClass.type.equals(symbol.type);
-            else
-                return false;
+        else { // check in the chain of inheritance 
+            currentClass = currentClass.parentClass;
+            while (currentClass != null){
+                if (currentClass.type.equals(symbol.type))
+                    return true;
+                currentClass = currentClass.parentClass;
+            }
+            return false;
+        }
     }
 
 
@@ -416,6 +422,8 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
                         throw new Exception("Argument types do not match at Method "+method+"() in "+currentScope);
                     arg++;
                 }
+            } else{
+                throw new Exception("Argument types do not match at Method "+method+"() in "+currentScope);
             }
         }
             
