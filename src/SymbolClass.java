@@ -8,8 +8,8 @@ public class SymbolClass extends Symbol{
     SymbolTable variables;
     int variablesOffset;
     int methodsOffset;
-    int totalVariablesOffset;
-    int totalMethodsOffset;
+    boolean variablesOffsetChecked;
+    boolean methodsOffsetChecked;
 
     public SymbolClass(String name, SymbolClass parentClass, int offset){
         super(name, name, offset);
@@ -18,8 +18,8 @@ public class SymbolClass extends Symbol{
         this.variables = new SymbolTable();
         this.variablesOffset = 0;
         this.methodsOffset = 0;
-        this.totalVariablesOffset = this.parentClass.variablesOffset;
-        this.totalMethodsOffset = this.parentClass.variablesOffset;
+        this.variablesOffsetChecked = false;
+        this.methodsOffsetChecked = false;
     }
 
     public SymbolClass(String name, int offset){
@@ -29,15 +29,15 @@ public class SymbolClass extends Symbol{
         this.variables = new SymbolTable();
         this.variablesOffset = 0;
         this.methodsOffset = 0;
-        this.totalVariablesOffset = 0;
-        this.totalMethodsOffset = 0;
+        this.variablesOffsetChecked = false;
+        this.methodsOffsetChecked = false;
     }
 
     @Override
     public String toString() {
         String string = "";
         string += "-----------Class " + this.name+"-----------";
-        if (this.parentClass == null){
+        // if (this.parentClass == null){
             string += "\n---Variables---";
             for (Map.Entry<String, Symbol> entry : this.variables.getSorted()) 
                 string += "\n"+this.name+"." + entry.getValue().toString();
@@ -45,20 +45,20 @@ public class SymbolClass extends Symbol{
             for (Map.Entry<String, Symbol> entry : this.methods.getSorted()) 
                 if (!(entry.getValue().overrided))
                     string += "\n"+this.name+"." + entry.getValue().toString();
-        }
-        else{
-            string += " extends ";
-            // for (Map.Entry<String, Symbol> entry : this.parentClass.variables.getSorted())
-            //     string += this.parentClass.name+"." + entry.getValue().name + " : "+entry.getValue().getOffset()+"\n";
-            string += parentClass.toString();
-            string += "\n---Variables---";
-            for (Map.Entry<String, Symbol> entry : this.variables.getSorted())
-                string += "\n"+this.name+"." + entry.getValue().toString();
-            string += "\n---Methods---";
-            for (Map.Entry<String, Symbol> entry : this.methods.getSorted())
-                if (!(entry.getValue().overrided))
-                    string += "\n"+this.name+"." + entry.getValue().toString();
-        }
+        // }
+        // else{
+        //     string += " extends ";
+        //     // for (Map.Entry<String, Symbol> entry : this.parentClass.variables.getSorted())
+        //     //     string += this.parentClass.name+"." + entry.getValue().name + " : "+entry.getValue().getOffset()+"\n";
+        //     string += parentClass.toString();
+        //     string += "\n---Variables---";
+        //     for (Map.Entry<String, Symbol> entry : this.variables.getSorted())
+        //         string += "\n"+this.name+"." + entry.getValue().toString();
+        //     string += "\n---Methods---";
+        //     for (Map.Entry<String, Symbol> entry : this.methods.getSorted())
+        //         if (!(entry.getValue().overrided))
+        //             string += "\n"+this.name+"." + entry.getValue().toString();
+        // }
         // debug
         // string += this.debugPrint();
         return string+"\n";
@@ -77,6 +77,12 @@ public class SymbolClass extends Symbol{
 
     @Override
     public Symbol putVariable(String key, Symbol variable){
+        // check parent offset
+        if (this.variablesOffsetChecked == false){
+            if(this.parentClass!=null)
+                this.variablesOffset += this.parentClass.variablesOffset;
+            this.variablesOffsetChecked = true;
+        }
         SymbolVariable var = (SymbolVariable) variable;
         int offset = 0;
         if (var.type.equals(Symbol.INT)){
@@ -87,27 +93,35 @@ public class SymbolClass extends Symbol{
             offset = 8;
         }
 
-        this.totalVariablesOffset = this.variablesOffset;
-        if (parentClass!=null)
-        this.totalVariablesOffset = this.variablesOffset + parentClass.variablesOffset;
-        Symbol s = variables.put(key, new SymbolVariable(var.type, var.name, this.totalVariablesOffset));
+        // if (parentClass!=null){
+        //     s = variables.put(key, new SymbolVariable(var.type, var.name, this.variablesOffset + parentClass.variablesOffset));
+        // } else {
+        //     s = 
+        // }
+        Symbol s = variables.put(key, new SymbolVariable(var.type, var.name, this.variablesOffset));
         this.variablesOffset += offset;
         return s;
     }
 
     @Override
     public Symbol putMethod(String key, Symbol method){
+        // check parent offset
+        if (this.methodsOffsetChecked == false){
+            if(this.parentClass!=null)
+                this.methodsOffset += this.parentClass.methodsOffset;
+            this.methodsOffsetChecked = true;
+        }
         SymbolMethod meth = (SymbolMethod) method;
         int offset = 8;
         // if overrided
         if (meth.overrided)
-        offset = 0;
+            offset = 0;
         
-        this.totalMethodsOffset = this.methodsOffset;
-        if (parentClass!=null)
-        this.totalMethodsOffset = this.methodsOffset + parentClass.methodsOffset;
-        meth.offset = this.totalMethodsOffset;
-        // Symbol s = methods.put(key, new SymbolMethod(meth.type, meth.name, this.totalMethodsOffset, meth.overrided, meth.methodClass));
+        // if (parentClass!=null){
+        //     meth.offset = this.methodsOffset + parentClass.methodsOffset;
+        // } else {
+        // }
+        meth.offset = this.methodsOffset;
         Symbol s = methods.put(key, meth);
         this.methodsOffset += offset;
         return s;
