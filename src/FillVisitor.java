@@ -19,7 +19,7 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
 
 
     @Override
-    public String visit(Identifier n, Symbol currentScope) throws Exception {
+    public String visit(Identifier n, Symbol thisScope) throws Exception {
         return n.f0.toString();
     }
 
@@ -29,16 +29,16 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
     * f2 -> ";"
     */
     @Override
-    public String visit(VarDeclaration n, Symbol currentScope) throws Exception {
-        String type = n.f0.accept(this, currentScope);
+    public String visit(VarDeclaration n, Symbol thisScope) throws Exception {
+        String type = n.f0.accept(this, thisScope);
 
         // check scope of variable name
-        String name = n.f1.accept(this, currentScope);
+        String name = n.f1.accept(this, thisScope);
 
-        if ( currentScope.getVariable(name) != null)
-           throw new Exception("Variable "+type+" "+name+" already declared in "+currentScope.name+"()");
+        if ( thisScope.getVariable(name) != null)
+           throw new Exception("Variable "+type+" "+name+" already declared in "+thisScope.name+"()");
         
-        currentScope.putVariable(name, new SymbolVariable(type, name, this.argumentVarOffsset++));
+        thisScope.putVariable(name, new SymbolVariable(type, name, this.argumentVarOffsset++));
 
         return null;
     }
@@ -50,8 +50,8 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
     *       | Identifier()
     */
     @Override
-    public String visit(Type n, Symbol currentScope) throws Exception {
-        String type = n.f0.accept(this, currentScope);
+    public String visit(Type n, Symbol thisScope) throws Exception {
+        String type = n.f0.accept(this, thisScope);
         if (type.equals(Symbol.INT) || type.equals(Symbol.BOOL) || type.equals(Symbol.ARR)){
             return type;
         }
@@ -69,7 +69,7 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
     * f2 -> "]"
     */
     @Override
-    public String visit(ArrayType n, Symbol currentScope) throws Exception {
+    public String visit(ArrayType n, Symbol thisScope) throws Exception {
         return "int[]";
     }
 
@@ -77,7 +77,7 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
      * f0 -> "boolean"
     */
     @Override
-    public String visit(BooleanType n, Symbol currentScope) throws Exception {
+    public String visit(BooleanType n, Symbol thisScope) throws Exception {
         return "boolean";
     }
 
@@ -85,7 +85,7 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
      * f0 -> "int"
     */
     @Override
-    public String visit(IntegerType n, Symbol currentScope) throws Exception {
+    public String visit(IntegerType n, Symbol thisScope) throws Exception {
         return "int";
     }
 
@@ -94,15 +94,15 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
     * f1 -> Identifier()
     */
     @Override
-    public String visit(FormalParameter n, Symbol currentScope) throws Exception {
-		String type = n.f0.accept(this, currentScope);
-		String name = n.f1.accept(this, currentScope);
+    public String visit(FormalParameter n, Symbol thisScope) throws Exception {
+		String type = n.f0.accept(this, thisScope);
+		String name = n.f1.accept(this, thisScope);
         
-        if (currentScope.getArgument(name) != null)
-            throw new Exception("Argument "+name+" already declared in "+currentScope.name+"()");
+        if (thisScope.getArgument(name) != null)
+            throw new Exception("Argument "+name+" already declared in "+thisScope.name+"()");
         
 		SymbolVariable argument = new SymbolVariable(type, name, this.argumentVarOffsset++);
-        currentScope.putArgument(name, argument);
+        thisScope.putArgument(name, argument);
 
 		return null;
 	}
@@ -123,33 +123,33 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
     * f12 -> "}"
     */
     @Override
-    public String visit(MethodDeclaration n, Symbol currentScope) throws Exception {
-        String type = n.f1.accept(this, currentScope);
-        String name = n.f2.accept(this, currentScope);
+    public String visit(MethodDeclaration n, Symbol thisScope) throws Exception {
+        String type = n.f1.accept(this, thisScope);
+        String name = n.f2.accept(this, thisScope);
 
         // check scope of method
-        if (currentScope.getMethod(name) != null)
-            throw new Exception("Method "+name+"() already declared in Class "+currentScope.name);
+        if (thisScope.getMethod(name) != null)
+            throw new Exception("Method "+name+"() already declared in Class "+thisScope.name);
         // ckeck for overriding
-        SymbolMethod currentMethod;
-        SymbolClass currentClass = (SymbolClass)currentScope;
-        if ((currentClass.parentClass == null ) || (currentClass.parentClass.getMethod(name) == null))
-            currentMethod = new SymbolMethod(type, name, false, currentClass);
+        SymbolMethod thisMethod;
+        SymbolClass thisClass = (SymbolClass)thisScope;
+        if ((thisClass.parentClass == null ) || (thisClass.parentClass.getMethod(name) == null))
+            thisMethod = new SymbolMethod(type, name, false, thisClass);
         else
-            currentMethod = new SymbolMethod(type, name, true, currentClass); // overrided  
+            thisMethod = new SymbolMethod(type, name, true, thisClass); // overrided  
             
-        currentClass.putMethod(name, currentMethod);
+        thisClass.putMethod(name, thisMethod);
 
         // fill parameters
         this.argumentVarOffsset = 0;
         if (n.f4.present())
-            n.f4.accept(this, currentMethod);
+            n.f4.accept(this, thisMethod);
             
         // fill variable declarations
         this.argumentVarOffsset = 0;
         if (n.f7.present())
-            n.f7.accept(this, currentMethod);
-        // currentMethod.print();
+            n.f7.accept(this, thisMethod);
+        // thisMethod.print();
 
         return null;
     }
@@ -175,7 +175,7 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
      * f17 -> "}"
      */
     @Override
-    public String visit(MainClass n, Symbol currentScope) throws Exception {
+    public String visit(MainClass n, Symbol thisScope) throws Exception {
 
         SymbolClass mainClass = (SymbolClass) table.get(n.f1.accept(this, null));
         // fill main method
@@ -211,17 +211,17 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
     * f5 -> "}"
     */
     @Override
-    public String visit(ClassDeclaration n, Symbol currentScope) throws Exception {
+    public String visit(ClassDeclaration n, Symbol thisScope) throws Exception {
 
-        SymbolClass currentClass = (SymbolClass)table.get(n.f1.accept(this, null));
+        SymbolClass thisClass = (SymbolClass)table.get(n.f1.accept(this, null));
 
         // fill class variable declarations
         if (n.f3.present())
-            n.f3.accept(this, currentClass);
+            n.f3.accept(this, thisClass);
             
         // fill methods
         if (n.f4.present())
-            n.f4.accept(this, currentClass);
+            n.f4.accept(this, thisClass);
         
         return null;
      }
@@ -237,17 +237,17 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
       * f7 -> "}"
       */
     @Override
-    public String visit(ClassExtendsDeclaration n, Symbol currentScope) throws Exception {
+    public String visit(ClassExtendsDeclaration n, Symbol thisScope) throws Exception {
 
-        SymbolClass currentClass = (SymbolClass)table.get(n.f1.accept(this, null));
+        SymbolClass thisClass = (SymbolClass)table.get(n.f1.accept(this, null));
 
         // fill class variable declarations
         if (n.f5.present())
-            n.f5.accept(this, currentClass);
+            n.f5.accept(this, thisClass);
 
         // fill methods
         if (n.f6.present())
-            n.f6.accept(this, currentClass);
+            n.f6.accept(this, thisClass);
 
         return null;
      }

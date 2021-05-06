@@ -4,12 +4,12 @@ import syntaxtree.*;
 import visitor.*;
 
 
-public class ClassVisitor extends GJDepthFirst<String, String> {
+public class ClassDeclarationVisitor extends GJDepthFirst<String, String> {
 
     SymbolTable table;
     int classOffsset;
 
-    public ClassVisitor(SymbolTable table) throws Exception {
+    public ClassDeclarationVisitor(SymbolTable table) throws Exception {
         this.table = table;
         this.classOffsset = 0;
     }

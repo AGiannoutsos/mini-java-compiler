@@ -30,8 +30,8 @@ public class Main {
                 SymbolTable table = new SymbolTable(arg);
                 
                 // Check Class Declarations
-                ClassVisitor classVisitor = new ClassVisitor(table);
-                root.accept(classVisitor, null);
+                ClassDeclarationVisitor classDeclarationVisitor = new ClassDeclarationVisitor(table);
+                root.accept(classDeclarationVisitor, null);
     
                 // Fill Class Methods and Fields
                 FillVisitor fillVisitor = new FillVisitor(table);
