@@ -42,11 +42,11 @@ public class Main {
                 root.accept(checkTypeVisitor, null);
                 
                 // Print offsets
-                // System.out.println(table);
+                System.out.println(table);
     
             }
             catch(ParseException ex){
-                System.out.println(ex.getMessage());
+                System.err.println(ex.getMessage());
             }
             catch(FileNotFoundException ex){
                 System.err.println(ex.getMessage());
