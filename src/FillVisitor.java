@@ -131,8 +131,11 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
         if (thisScope.getMethod(name) != null)
             throw new Exception("Method "+name+"() already declared in Class "+thisScope.name);
         // ckeck for overriding
-        SymbolMethod thisMethod;
         SymbolClass thisClass = (SymbolClass)thisScope;
+        SymbolClass parentClass = thisClass.parentClass;
+        SymbolMethod thisMethod = (SymbolMethod)thisScope.getMethod(name);
+        SymbolMethod overritedMethod;
+        
         if ((thisClass.parentClass == null ) || (thisClass.parentClass.getMethod(name) == null))
             thisMethod = new SymbolMethod(type, name, false, thisClass);
         else
@@ -150,6 +153,31 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
         if (n.f7.present())
             n.f7.accept(this, thisMethod);
         // thisMethod.print();
+
+        // after parameters have been initialized check for correct overriding
+        while(parentClass != null){
+            if (parentClass.getMethod(name) != null){
+                overritedMethod = (SymbolMethod)parentClass.getMethod(name);
+                // check if return type matches
+                if (!CheckTypeVisitor.checkType(thisMethod, overritedMethod.type, table))
+                    throw new Exception("Overrided method "+name+"() has wrong return type declared in Class "+parentClass.name);
+
+                // check for arguments
+                String[] argumentStrings = overritedMethod.getStringArguments().split(", ");
+                String[] declaredArgumentStrings = thisMethod.getStringArguments().split(", ");
+                if(argumentStrings.length == declaredArgumentStrings.length){
+                    int arg = 0;
+                    for (Map.Entry<String, Symbol> entry : thisMethod.arguments.getSorted()) {
+                        if(!CheckTypeVisitor.checkType(entry.getValue(), argumentStrings[arg], table))
+                            throw new Exception("Argument types do not match in overrided method "+thisMethod.name+"() in Class "+thisScope.name);
+                        arg++;
+                    }
+                } else{
+                    throw new Exception("Argument types do not match in overrided method "+thisMethod.name+"() in Class "+thisScope.name);
+                }
+            }
+            parentClass = parentClass.parentClass;
+        } 
 
         return null;
     }

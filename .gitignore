@@ -7,3 +7,5 @@ JavaChar*
 *.class
 src/*.class
 out*
+*testsuite
+.gitignore

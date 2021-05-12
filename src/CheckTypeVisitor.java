@@ -20,7 +20,7 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
         this.argumentStack = new ArrayDeque<String>();
     }
 
-    public boolean checkType(Symbol symbol, String type) throws Exception {
+    static public boolean checkType(Symbol symbol, String type, SymbolTable table) throws Exception {
         if (type.equals(Symbol.INT) || type.equals(Symbol.BOOL) || type.equals(Symbol.ARR)){
             return symbol.type.equals(type);
         }
@@ -143,7 +143,7 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
         String expressionType = n.f2.accept(this, thisScope);
         // System.out.println(expressionType);
         // check type
-        if (!checkType(thisVariable, expressionType))
+        if (!checkType(thisVariable, expressionType, table))
             throw new Exception("Wrong type "+expressionType+" at Assignment in "+thisScope.name+"()");
         return null;
     }
@@ -165,7 +165,7 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
             throw new Exception("Unknown Identifier "+name+" at Array Assignment in "+thisScope.name+"()");
 
         // check for identifier type
-        if (!checkType(thisVariable, Symbol.ARR))
+        if (!checkType(thisVariable, Symbol.ARR, table))
             throw new Exception("Wrong type "+thisVariable.type+" at Array Assignment in "+thisScope.name+"()");
         
         // check index expression type
@@ -418,7 +418,7 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
             if(argumentStrings.length == declaredArgumentStrings.length){
                 int arg = 0;
                 for (Map.Entry<String, Symbol> entry : thisMethod.arguments.getSorted()) {
-                    if(!checkType(entry.getValue(), argumentStrings[arg]))
+                    if(!checkType(entry.getValue(), argumentStrings[arg], table))
                         throw new Exception("Argument types do not match at Method "+method+"() in "+thisScope);
                     arg++;
                 }
@@ -458,7 +458,7 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
             if (table.get(type.replaceFirst("Class ", "")) != null)
                 return type.replaceFirst("Class ", "");
             else
-                throw new Exception("Unknown Expression Class Identifier: "+type+" type in "+thisScope);
+                throw new Exception("Unknown Expression Class Identifier: "+type+" type in "+thisScope.name+"()");
         }
         if (type.startsWith("Bracket ")){
             return type.replaceFirst("Bracket ", "");
@@ -470,7 +470,7 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
         SymbolVariable thisVariable = (SymbolVariable)thisMethod.getVariable_r(identifier);
         // if identifier is not defined the type is not known
         if (thisVariable == null)
-            throw new Exception("Unknown Expression Identifier: "+type+" type: "+type+" in "+thisScope);
+            throw new Exception("Unknown Expression Identifier: "+type+" type: "+type+" in "+thisScope.name+"()");
         else
             return thisVariable.type;
         
@@ -587,7 +587,8 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
 
         // check for method return type
         String returnMethodType = n.f10.accept(this, thisMethod);
-        if (!thisMethod.type.equals(returnMethodType))
+        // if (!thisMethod.type.equals(returnMethodType))
+            if (!checkType(thisMethod, returnMethodType, table))
             throw new Exception("Wrong return type "+returnMethodType+" while Method "+thisMethod.name+"() returns "+thisMethod.type+" in Class "+thisScope.name);
 
 
