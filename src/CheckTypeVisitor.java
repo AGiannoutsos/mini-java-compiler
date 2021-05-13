@@ -415,7 +415,7 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
             // System.out.println(declaredArgumentString);
             // System.out.println(argumentString.length());
             // if (!declaredArgumentString.equals(argumentString))
-            if(argumentStrings.length == declaredArgumentStrings.length){
+            if(argumentStrings.length == declaredArgumentStrings.length && !declaredArgumentStrings[0].equals("")){
                 int arg = 0;
                 for (Map.Entry<String, Symbol> entry : thisMethod.arguments.getSorted()) {
                     if(!checkType(entry.getValue(), argumentStrings[arg], table))
@@ -423,8 +423,12 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
                     arg++;
                 }
             } else{
-                throw new Exception("Argument types do not match at Method "+method+"() in "+thisScope);
+                throw new Exception("Argument count do not match at Method "+method+"() in "+thisScope);
             }
+        } 
+        else{
+            if (!declaredArgumentStrings[0].equals(""))
+                throw new Exception("Argument counts do not match at Method "+method+"() in "+thisScope);
         }
             
         

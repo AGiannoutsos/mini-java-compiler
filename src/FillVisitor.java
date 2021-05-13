@@ -154,30 +154,64 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
             n.f7.accept(this, thisMethod);
         // thisMethod.print();
 
+
+        // code for inherrited polymorphic overriding 
         // after parameters have been initialized check for correct overriding
+        // while(parentClass != null){
+        //     if (parentClass.getMethod(name) != null){
+        //         overritedMethod = (SymbolMethod)parentClass.getMethod(name);
+        //         // check if return type matches
+        //         if (!CheckTypeVisitor.checkType(overritedMethod, thisMethod.type, table))
+        //             throw new Exception("Overrided method "+name+"() has wrong return type declared in Class "+parentClass.name);
+
+        //         // check for arguments
+        //         String[] argumentStrings = overritedMethod.getStringArguments().split(", ");
+        //         String[] declaredArgumentStrings = thisMethod.getStringArguments().split(", ");
+        //         if(argumentStrings.length == declaredArgumentStrings.length){
+        //             int arg = 0;
+        //             for (Map.Entry<String, Symbol> entry : thisMethod.arguments.getSorted()) {
+        //                 SymbolMethod argSymbol = new SymbolMethod(argumentStrings[arg], argumentStrings[arg]);
+        //                 if(!CheckTypeVisitor.checkType(argSymbol, entry.getValue().type, table))
+        //                     throw new Exception("Argument types do not match in overrided method "+thisMethod.name+"() in Class "+thisScope.name);
+        //                 arg++;
+        //             }
+        //         } else{
+        //             throw new Exception("Argument types do not match in overrided method "+thisMethod.name+"() in Class "+thisScope.name);
+        //         }
+        //         // this method now becomes overriden
+        //         thisMethod.overrided = true;
+        //     }
+        //     parentClass = parentClass.parentClass;
+        // } 
+
+
         while(parentClass != null){
             if (parentClass.getMethod(name) != null){
                 overritedMethod = (SymbolMethod)parentClass.getMethod(name);
                 // check if return type matches
-                if (!CheckTypeVisitor.checkType(thisMethod, overritedMethod.type, table))
+                if (!overritedMethod.type.equals(thisMethod.type))
                     throw new Exception("Overrided method "+name+"() has wrong return type declared in Class "+parentClass.name);
 
                 // check for arguments
                 String[] argumentStrings = overritedMethod.getStringArguments().split(", ");
                 String[] declaredArgumentStrings = thisMethod.getStringArguments().split(", ");
-                if(argumentStrings.length == declaredArgumentStrings.length){
+                if(argumentStrings.length == declaredArgumentStrings.length && argumentStrings[0].equals(declaredArgumentStrings[0])){
                     int arg = 0;
                     for (Map.Entry<String, Symbol> entry : thisMethod.arguments.getSorted()) {
-                        if(!CheckTypeVisitor.checkType(entry.getValue(), argumentStrings[arg], table))
+                        if(!argumentStrings[arg].equals(entry.getValue().type))
                             throw new Exception("Argument types do not match in overrided method "+thisMethod.name+"() in Class "+thisScope.name);
                         arg++;
                     }
                 } else{
-                    throw new Exception("Argument types do not match in overrided method "+thisMethod.name+"() in Class "+thisScope.name);
+                    throw new Exception("Argument count do not match in overrided method "+thisMethod.name+"() in Class "+thisScope.name);
                 }
+                // this method now becomes overriden
+                thisMethod.overrided = true;
             }
             parentClass = parentClass.parentClass;
         } 
+
+
 
         return null;
     }
