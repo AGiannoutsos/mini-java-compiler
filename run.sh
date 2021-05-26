@@ -10,10 +10,10 @@
 
 
 make
-# java Main Example.java
+java Main Example.java
 # java Main minijava-examples-new/LinkedList.java     
-java Main  minijava-examples-new/minijava-extra/test20.java 
-java Main minijava-examples-new/minijava-extra/ManyClasses.java
+# java Main  minijava-examples-new/minijava-extra/test20.java 
+# java Main minijava-examples-new/minijava-extra/ManyClasses.java
 
 
 

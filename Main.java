@@ -43,6 +43,11 @@ public class Main {
                 
                 // Print offsets
                 System.out.println(table);
+
+                // LLVM visitor generates LLVM IR
+                LLVMVisitor llvmVisitor = new LLVMVisitor(table);
+                root.accept(llvmVisitor, null);
+
     
             }
             catch(ParseException ex){

@@ -72,6 +72,15 @@ public class SymbolMethod extends Symbol{
         return string;
     }
 
+    public String getLLVMStringArguments(){
+        String string = "";
+        for (Map.Entry<String, Symbol> entry : this.arguments.getSorted()) 
+                string += LLVMVisitor.java2LLVMtype(entry.getValue().type)+" %."+entry.getValue().name+", ";
+        if(string.endsWith(", ")) 
+            string = string.substring(0, string.length() - 2);
+        return string;
+    }
+
 
 
     public String print(){

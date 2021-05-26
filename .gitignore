@@ -9,3 +9,5 @@ src/*.class
 out*
 *testsuite
 .gitignore
+llvm-examples
+mainexe
