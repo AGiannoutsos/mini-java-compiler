@@ -1,17 +1,45 @@
 class MulInherit {
   public static void main(String[] args) {
-    System.out.println(666);
+    int test;
+    int best;
+    boolean a;
+    a = true;
+    a = a && a;
+    test = 10;
+    if (test < 20) 
+      System.out.println(1000);
+    else 
+      System.out.println(10);
+    System.out.println((666+test)+1000);
+    System.out.println(777-10);
+    System.out.println((test*10));
+    System.out.println(best);
+    while(test < 20){
+      test = test + 1;
+      System.out.println(test);
+    }
+    
   }
 }
 
 class A{
-  public int foo(int aa, boolean bb, C cc){ return 1;}
+  int a1;
+  int a2;
+  boolean a3;
+  int a4;
+  public int foo(int aa, boolean bb, C cc){ int a1;
+                                         a2=666; 
+                                         System.out.println(777);
+                                         System.out.println(a2);
+                                          return 1;}
   public int bla(){ int kk; kk=1; return 1;}
   public int[] foo2(int[] arr){ return new int[10];}
 }
 
-class B{
+class B extends A{
+  int a5;
   public int bla(){ C c; return 1;}
+  public int bla2(){ C c; return 1;}
 }
 
 

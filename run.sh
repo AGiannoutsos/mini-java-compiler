@@ -11,6 +11,8 @@
 
 make
 java Main Example.java
+clang-4.0 -o mainexe Example.ll
+./mainexe
 # java Main minijava-examples-new/LinkedList.java     
 # java Main  minijava-examples-new/minijava-extra/test20.java 
 # java Main minijava-examples-new/minijava-extra/ManyClasses.java
