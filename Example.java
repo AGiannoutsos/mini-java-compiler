@@ -1,23 +1,32 @@
 class MulInherit {
   public static void main(String[] args) {
-    int test;
-    int best;
-    boolean a;
-    a = true;
-    a = a && a;
-    test = 10;
-    if (test < 20) 
-      System.out.println(1000);
-    else 
-      System.out.println(10);
-    System.out.println((666+test)+1000);
-    System.out.println(777-10);
-    System.out.println((test*10));
-    System.out.println(best);
-    while(test < 20){
-      test = test + 1;
-      System.out.println(test);
-    }
+    // int test;
+    // int best;
+    // boolean a;
+    // a = true;
+    // a = a && a;
+    // test = 10;
+    // if (test < 20) 
+    //   System.out.println(1000);
+    // else 
+    //   System.out.println(10);
+    // System.out.println((666+test)+1000);
+    // System.out.println(777-10);
+    // System.out.println((test*10));
+    // System.out.println(best);
+    // while(test < 5){
+    //   test = test + 1;
+    //   System.out.println(test);
+    // }
+
+    int[] arr;
+    arr = new int[2];
+    arr[1] = 100;
+    // arr[(1-1)] = arr[0];
+    // arr[(1-1)] = 20;
+    System.out.println(arr[0]);
+    System.out.println(arr[1]);
+
     
   }
 }

@@ -24,61 +24,68 @@ define void @throw_oob() {
 }
 
 define i32 @main() {
-	%test = alloca i32
-	%best = alloca i32
-	%a = alloca i1
-	%_1 = add i1 0, 1
-	store i1 %_1, i1* %a
-	%_2 = load i1, i1* %a
-	%_3 = load i1, i1* %a
-	%_4 = and i1 %_2, %_3
-	store i1 %_4, i1* %a
-	%_5 = add i32 0, 10
-	store i32 %_5, i32* %test
-	%_6 = load i32, i32* %test
-	%_7 = add i32 0, 20
-	%_8 = icmp slt i32 %_6, %_7
-	br i1 %_8, label %if1, label %if2
-if1:
-	%_9 = add i32 0, 1000
-	call void (i32) @print_int(i32 %_9)
-	br label %if3
-if2:
-	%_10 = add i32 0, 10
-	call void (i32) @print_int(i32 %_10)
-	br label %if3
-if3:
-	%_11 = add i32 0, 666
-	%_12 = load i32, i32* %test
-	%_13 = add i32 %_11, %_12
-	%_14 = add i32 0, 1000
-	%_15 = add i32 %_13, %_14
-	call void (i32) @print_int(i32 %_15)
-	%_16 = add i32 0, 777
-	%_17 = add i32 0, 10
-	%_18 = sub i32 %_16, %_17
-	call void (i32) @print_int(i32 %_18)
-	%_19 = load i32, i32* %test
-	%_20 = add i32 0, 10
-	%_21 = mul i32 %_19, %_20
-	call void (i32) @print_int(i32 %_21)
-	%_22 = load i32, i32* %best
-	call void (i32) @print_int(i32 %_22)
-	br label %Lif4
-Lif4:
-	%_23 = load i32, i32* %test
-	%_24 = add i32 0, 20
-	%_25 = icmp slt i32 %_23, %_24
-	br i1 %_25, label %Lif5, label %Lif6
-Lif5:
-	%_26 = load i32, i32* %test
-	%_27 = add i32 0, 1
-	%_28 = add i32 %_26, %_27
-	store i32 %_28, i32* %test
-	%_29 = load i32, i32* %test
-	call void (i32) @print_int(i32 %_29)
-	br label %Lif4
-Lif6:
+	%arr = alloca i32*
+	%_1 = add i32 0, 2
+	%_2 = icmp slt i32 %_1, 0
+	br i1 %_2, label %Arif1, label %Arif2
+Arif1:
+	call void @throw_oob()
+	br label %Arif2
+Arif2:
+	%_3 = add i32 %_1, 1
+	%_4 = call i8* @calloc(i32 4, i32 %_3)
+	%_5 = bitcast i8* %_4 to i32* 
+	%_6 = getelementptr i32, i32* %_5, i32 0
+	store i32 %_1, i32* %_6
+	store i32* %_5, i32** %arr
+	%_7 = load i32*, i32** %arr
+	%_8 = add i32 0, 1
+	%_9 = add i32 0, 100
+	%_10 = getelementptr i32, i32* %_7, i32 0
+	%_11 = load i32, i32* %_10
+	%_12 = icmp slt i32 %_8, %_11
+	%_13 = icmp slt i32 -1, %_8
+	%_14 = and i1 %_13, %_12
+	br i1 %_14, label %Arif4, label %Arif3
+Arif3:
+	call void @throw_oob()
+	br label %Arif4
+Arif4:
+	%_15 = add i32 %_8, 1
+	%_16 = getelementptr i32, i32* %_7, i32 %_15
+	store i32 %_9, i32* %_16
+	%_17 = load i32*, i32** %arr
+	%_18 = add i32 0, 0
+	%_19 = getelementptr i32, i32* %_17, i32 0
+	%_20 = load i32, i32* %_19
+	%_21 = icmp slt i32 %_18, %_20
+	%_22 = icmp slt i32 -1, %_18
+	%_23 = and i1 %_22, %_21
+	br i1 %_23, label %Arif6, label %Arif5
+Arif5:
+	call void @throw_oob()
+	br label %Arif6
+Arif6:
+	%_24 = add i32 %_18, 1
+	%_25 = getelementptr i32, i32* %_17, i32 %_24
+	%_26 = load i32, i32* %_25
+	call void (i32) @print_int(i32 %_26)
+	%_27 = load i32*, i32** %arr
+	%_28 = add i32 0, 1
+	%_29 = getelementptr i32, i32* %_27, i32 0
+	%_30 = load i32, i32* %_29
+	%_31 = icmp slt i32 %_28, %_30
+	%_32 = icmp slt i32 -1, %_28
+	%_33 = and i1 %_32, %_31
+	br i1 %_33, label %Arif8, label %Arif7
+Arif7:
+	call void @throw_oob()
+	br label %Arif8
+Arif8:
+	%_34 = add i32 %_28, 1
+	%_35 = getelementptr i32, i32* %_27, i32 %_34
+	%_36 = load i32, i32* %_35
+	call void (i32) @print_int(i32 %_36)
 	ret i32 0
 }
 
@@ -90,44 +97,55 @@ define i32 @A.foo(i8* %this, i32 %.aa, i1 %.bb, i8* %.cc) {
 	%cc = alloca i8*
 	store i8* %.cc, i8** %cc
 	%a1 = alloca i32
-	%_30 = getelementptr i8, i8* %this, i32 4
-	%_31 = bitcast i8* %_30 to i32* 
-	%_32 = add i32 0, 666
-	store i32 %_32, i32* %_31
-	%_33 = add i32 0, 777
-	call void (i32) @print_int(i32 %_33)
-	%_34 = getelementptr i8, i8* %this, i32 4
-	%_35 = bitcast i8* %_34 to i32* 
-	%_36 = load i32, i32* %_35
-	call void (i32) @print_int(i32 %_36)
-	%_37 = add i32 0, 1
-	ret i32 %_37
+	%_37 = getelementptr i8, i8* %this, i32 4
+	%_38 = bitcast i8* %_37 to i32* 
+	%_39 = add i32 0, 666
+	store i32 %_39, i32* %_38
+	%_40 = add i32 0, 777
+	call void (i32) @print_int(i32 %_40)
+	%_41 = getelementptr i8, i8* %this, i32 4
+	%_42 = bitcast i8* %_41 to i32* 
+	%_43 = load i32, i32* %_42
+	call void (i32) @print_int(i32 %_43)
+	%_44 = add i32 0, 1
+	ret i32 %_44
 }
 
 define i32 @A.bla(i8* %this) {
 	%kk = alloca i32
-	%_38 = add i32 0, 1
-	store i32 %_38, i32* %kk
-	%_39 = add i32 0, 1
-	ret i32 %_39
+	%_45 = add i32 0, 1
+	store i32 %_45, i32* %kk
+	%_46 = add i32 0, 1
+	ret i32 %_46
 }
 
 define i32* @A.foo2(i8* %this, i32* %.arr) {
 	%arr = alloca i32*
 	store i32* %.arr, i32** %arr
-	%_40 = add i32 0, 10
-	ret i32* null
+	%_47 = add i32 0, 10
+	%_48 = icmp slt i32 %_47, 0
+	br i1 %_48, label %Arif9, label %Arif10
+Arif9:
+	call void @throw_oob()
+	br label %Arif10
+Arif10:
+	%_49 = add i32 %_47, 1
+	%_50 = call i8* @calloc(i32 4, i32 %_49)
+	%_51 = bitcast i8* %_50 to i32* 
+	%_52 = getelementptr i32, i32* %_51, i32 0
+	store i32 %_47, i32* %_52
+	ret i32* %_51
 }
 
 define i32 @B.bla(i8* %this) {
 	%c = alloca i8*
-	%_41 = add i32 0, 1
-	ret i32 %_41
+	%_53 = add i32 0, 1
+	ret i32 %_53
 }
 
 define i32 @B.bla2(i8* %this) {
 	%c = alloca i8*
-	%_42 = add i32 0, 1
-	ret i32 %_42
+	%_54 = add i32 0, 1
+	ret i32 %_54
 }
 
