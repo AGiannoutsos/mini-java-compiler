@@ -75,6 +75,15 @@ public class SymbolClass extends Symbol{
         return string;
     }
 
+    public int getOffset() {
+        if (this.variablesOffsetChecked == false){
+            if(this.parentClass!=null)
+                this.variablesOffset += this.parentClass.variablesOffset;
+            this.variablesOffsetChecked = true;
+        }
+        return this.variablesOffset;
+    }
+
     @Override
     public Symbol putVariable(String key, Symbol variable){
         // check parent offset

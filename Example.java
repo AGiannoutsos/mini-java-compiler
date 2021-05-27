@@ -20,14 +20,28 @@ class MulInherit {
     // }
 
     int[] arr;
-    arr = new int[2];
-    arr[1] = 100;
+    A a;
+    int i;
+    boolean boo;
+    // arr = new int[2];
+    // arr[0] = 100;
     // arr[(1-1)] = arr[0];
-    // arr[(1-1)] = 20;
-    System.out.println(arr[0]);
-    System.out.println(arr[1]);
+    // // arr[(1-1)] = 20;
+    // System.out.println(arr[0]);
+    // System.out.println(arr[1]);
+    // System.out.println(arr.length);
 
+    a = new A();
     
+    i = (a.foo(74, (new A()).foo(1, new A(), new C()), new C())).bla();
+    System.out.println(i);
+    
+    boo = (a.bo1()) && (a.bo2());
+    if (boo) 
+      System.out.println(3333);
+    else 
+      System.out.println(4444);
+
   }
 }
 
@@ -36,18 +50,30 @@ class A{
   int a2;
   boolean a3;
   int a4;
-  public int foo(int aa, boolean bb, C cc){ int a1;
-                                         a2=666; 
-                                         System.out.println(777);
-                                         System.out.println(a2);
-                                          return 1;}
-  public int bla(){ int kk; kk=1; return 1;}
+
+  public boolean bo1(){
+    System.out.println(1111);
+    return true;
+  } 
+  public boolean bo2(){
+    System.out.println(2222);
+    return false;
+  } 
+  public A foo(int aa, A bb, C cc){ 
+                                        A a;
+                                        a1=aa; 
+                                        System.out.println(777);
+                                        System.out.println(a2);
+                                        // a.a1 = aa;
+                                        a = new A();
+                                        return a;}
+  public int bla(){ int kk; kk=44; return 55;}
   public int[] foo2(int[] arr){ return new int[10];}
 }
 
 class B extends A{
   int a5;
-  public int bla(){ C c; return 1;}
+  public int bla(){ C c; return 66;}
   public int bla2(){ C c; return 1;}
 }
 

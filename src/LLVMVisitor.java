@@ -4,6 +4,9 @@ import syntaxtree.*;
 import visitor.*;
 import java.io.PrintWriter;
 import java.util.Map;
+import java.util.Deque;
+import java.util.ArrayDeque;
+
 
 public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
 
@@ -12,17 +15,24 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
     PrintWriter out;
     int uniqueRegiserCounter;
     int uniqueLabelCounter;
+    String thisClass_r;
+    String thisIdClass;
+    Deque<String> argumentStack;
 
     static String LLVM_INT  = "i32";
     static String LLVM_BOOL = "i1";
     static String LLVM_ARR  = "i32*";
     static String LLVM_PTR  = "i8*";
+    static String LLVM_PTR_PTR  = "i8**";
 
     public LLVMVisitor(SymbolTable table) throws Exception {
         this.table = table;
         this.classOffsset = 0;
         this.uniqueRegiserCounter = 0;
         this.uniqueLabelCounter = 0;
+        this.thisClass_r = "";
+        this.thisIdClass = "";
+        this.argumentStack = new ArrayDeque<String>();
 
         // llvm outputfile
         String filename = table.name;
@@ -105,6 +115,10 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
         emit("\tbr label %"+label+"\n");
     }
 
+    void PHI(String type, String a, String b, String la, String lb, String to) throws Exception {
+        emit("\t" +to+ " = phi "+type+" ["+a+", %"+la+"], ["+b+", %"+lb+"]\n");
+    }
+
     void CMP(String to, String a, String b) throws Exception {
         emit("\t"+to+" = icmp slt i32 "+a+", "+b+"\n");
     }
@@ -129,8 +143,20 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
         emit("\t"+to+" = getelementptr i32, i32* "+from+", i32 "+index+"\n");
     }
 
+    void GETELEM(String type, String from, String to, String index) throws Exception {
+        emit("\t"+to+" = getelementptr "+type+", "+type+"* "+from+", i32 "+index+"\n");
+    }
+
+    void GETELEMVTABLE(String to, String className, int offset) throws Exception {
+        emit("\t"+to+" = getelementptr ["+offset+" x i8*], ["+offset+" x i8*]* @."+className+"_vtable, i32 0, i32 0\n");
+    }
+
     void CALLOC(String to, String size, String elements) throws Exception {
         emit("\t"+to+" = call i8* @calloc(i32 "+size+", i32 "+elements+")\n");
+    }
+
+    void CALL_METH(String type, String methodRegister, String arguments, String to) throws Exception {
+        emit("\t"+to+" = call "+type+" "+methodRegister+"("+arguments+")\n");
     }
 
     String currentRegister() {
@@ -196,14 +222,14 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
         String methodName           = null;
         String llvmArgumentsTypes   = null;
         for (Map.Entry<String, Symbol> classEntry : this.table.getSorted()) {
-            System.out.println(classEntry.getValue().name);
+            // System.out.println(classEntry.getValue().name);
             // System.out.println(thisClassMethods.size());
             
             thisClass        = (SymbolClass) classEntry.getValue();
             className        = thisClass.name;
             thisClassMethods = thisClass.methods;
             methodsNum       = thisClassMethods.size();
-            emit("@."+className+"_table = ");
+            emit("@."+className+"_vtable = ");
             if (thisClass.getMethod("main") != null && methodsNum == 1){ //main method
                 emit("global [0 x i8*] [");
             } else {
@@ -233,6 +259,7 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
         SymbolVariable thisVariable = null; 
         thisVariable = (SymbolVariable) thisMethod.getVariable(identifier);
         if (thisVariable != null){
+            this.thisIdClass = thisVariable.type;
             if(!ptr){ //get value and not pointer, load
                 LOAD(java2LLVMtype(thisVariable.type), "%"+thisVariable.name, getRegister());
                 typeRegister[0] = java2LLVMtype(thisVariable.type);
@@ -246,8 +273,9 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
         // else the variable is laceted in the class scope
         thisVariable = (SymbolVariable) thisMethod.getVariable_r(identifier);
         if (thisVariable != null){
+            this.thisIdClass = thisVariable.type;
             // %_1 = getelementptr i8, i8* %this, i32 24
-            GETELEMTHIS(getRegister(), thisVariable.offset);
+            GETELEMTHIS(getRegister(), thisVariable.offset+8); // add 8 for the vtable offset
 	        // %_2 = bitcast i8* %_1 to i32*
             BITCAST(LLVM_PTR, currentRegister(), java2LLVMtype(thisVariable.type), getRegister());
             if(!ptr){ //get value and not pointer, load
@@ -310,6 +338,7 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
     public String visit(MainClass n, Symbol thisClass) throws Exception {
 
         String classname = n.f1.accept(this, null);
+        this.thisClass_r = classname;
 
         SymbolClass mainClass = (SymbolClass)table.get(classname);
         emit("define i32 @main() {\n");
@@ -336,6 +365,7 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
     public String visit(ClassDeclaration n, Symbol thisScope) throws Exception {
 
         SymbolClass thisClass = (SymbolClass)table.get(n.f1.accept(this, null));
+        this.thisClass_r = thisClass.name;
            
         // check methods
         if (n.f4.present())
@@ -349,6 +379,7 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
     public String visit(ClassExtendsDeclaration n, Symbol thisScope) throws Exception {
 
         SymbolClass thisClass = (SymbolClass)table.get(n.f1.accept(this, null));
+        this.thisClass_r = thisClass.name;
 
         // ckeck methods
         if (n.f6.present())
@@ -407,11 +438,11 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
             emit("\t%"+thisVariable.name+" = alloca "+java2LLVMtype(thisVariable.type)+"\n");
         }   
 
-        // statemants
+        // statements
         n.f8.accept(this, thisMethod);
 
         // return expression
-        String expRegister = n.f10.accept(this, thisScope);
+        String expRegister = n.f10.accept(this, thisMethod);
         emit("\tret "+java2LLVMtype(thisMethod.type)+" "+expRegister+"\n}\n\n");
 
         return null;
@@ -446,9 +477,6 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
         String identifier = n.f0.accept(this, thisScope);
         String[] typeRegister = getTypeRegister(identifier, (SymbolMethod)thisScope, true);
         String expRegister = n.f2.accept(this, thisScope);
-        System.out.println("EDOOOOOOOOOOOOOOOOO");
-        System.out.println(typeRegister[0]);
-        System.out.println(typeRegister[1]);
 
         // store 
         STORE(typeRegister[0], expRegister, typeRegister[1]);
@@ -506,7 +534,6 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
     }
 
 
-
     /**
      * f0 -> "while"
     * f1 -> "("
@@ -547,7 +574,6 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
     }
 
     
-
     /**
     * f0 -> AndExpression()
     *       | CompareExpression()
@@ -567,15 +593,30 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
     * f0 -> PrimaryExpression()
     * f1 -> "&&"
     * f2 -> PrimaryExpression()
-    */
+    */ //short-circuiting
     public String visit(AndExpression n, Symbol thisScope) throws Exception {
         String expressionRegister1 = n.f0.accept(this, thisScope);
+        
+        String label1 = "And"+getLabel();
+        String label2 = "And"+getLabel();
+        String label3 = "And"+getLabel();
+        String label4 = "And"+getLabel();
+        
+        GOTO(label1);
+        emitLabel(label1);
+        BR(expressionRegister1, label2, label3);
+        emitLabel(label2);
         String expressionRegister2 = n.f2.accept(this, thisScope);
+        GOTO(label3);
+        emitLabel(label3);
+        GOTO(label4);
+        emitLabel(label4);
 
-        AND(LLVM_BOOL, getRegister(), expressionRegister1, expressionRegister2);
+        PHI(LLVM_BOOL, "0", expressionRegister2, label1, label3, getRegister());
+        // AND(LLVM_BOOL, getRegister(), expressionRegister1, expressionRegister2);
         return currentRegister();
     }
-
+    
     /**
      * f0 -> PrimaryExpression()
     * f1 -> "<"
@@ -641,106 +682,109 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
         return getElemArrSafe(arrayRegister, indexRegister, false); 
     }
 
+    /**
+     * f0 -> PrimaryExpression()
+    * f1 -> "."
+    * f2 -> "length"
+    */
+    public String visit(ArrayLength n, Symbol thisScope) throws Exception {
+        String arrayRegister = n.f0.accept(this, thisScope);
 
-    // /**
-    //  * f0 -> PrimaryExpression()
-    // * f1 -> "."
-    // * f2 -> "length"
-    // */
-    // public String visit(ArrayLength n, Symbol thisScope) throws Exception {
-    //     String type1 = n.f0.accept(this, thisScope);
+        GETELEMARR(arrayRegister, getRegister(), "0");
+        LOAD(LLVM_INT, currentRegister(), getRegister());
+        return currentRegister();
+    }
 
-    //     if (type1.equals(Symbol.ARR))
-    //         return Symbol.INT;
-    //     else
-    //         throw new Exception("Wrong type "+type1+" at Array Length Expression in "+thisScope);
-    // }
+    /**
+    * f0 -> Expression()
+    * f1 -> ExpressionTail()
+    */
+    public String visit(ExpressionList n, Symbol thisScope) throws Exception {
+        String argumentsTypes = n.f0.accept(this, thisScope);
+        argumentStack.push(argumentsTypes);
+        // get the rest parameters
+        n.f1.accept(this, thisScope);
+        // pop last from stack
+        return argumentStack.pop();
+    }
 
-    // /**
-    // * f0 -> Expression()
-    // * f1 -> ExpressionTail()
-    // */
-    // public String visit(ExpressionList n, Symbol thisScope) throws Exception {
-    //     String argumentsTypes = n.f0.accept(this, thisScope);
-    //     argumentStack.push(argumentsTypes);
-    //     // get the rest parameters
-    //     n.f1.accept(this, thisScope);
-    //     // pop last from stack
-    //     return argumentStack.pop();
-    // }
-
-    // /**
-    //  * f0 -> ","
-    // * f1 -> Expression()
-    // */
-    // public String visit(ExpressionTerm n, Symbol thisScope) throws Exception {
-    //     String argumentsTypes = argumentStack.pop();
-    //     argumentsTypes += ", " + n.f1.accept(this, thisScope);
-    //     argumentStack.push(argumentsTypes);
-    //     return argumentsTypes;
-    // }
+    /**
+     * f0 -> ","
+    * f1 -> Expression()
+    */
+    public String visit(ExpressionTerm n, Symbol thisScope) throws Exception {
+        String argumentsTypes = argumentStack.pop();
+        argumentsTypes += ", " + n.f1.accept(this, thisScope);
+        argumentStack.push(argumentsTypes);
+        return argumentsTypes;
+    }
 
 
-    // /**
-    //  * f0 -> PrimaryExpression()
-    // * f1 -> "."
-    // * f2 -> Identifier()
-    // * f3 -> "("
-    // * f4 -> ( ExpressionList() )?
-    // * f5 -> ")"
-    // */
-    // public String visit(MessageSend n, Symbol thisScope) throws Exception {
+    /**
+     * f0 -> PrimaryExpression()
+    * f1 -> "."
+    * f2 -> Identifier()
+    * f3 -> "("
+    * f4 -> ( ExpressionList() )?
+    * f5 -> ")"
+    */
+    public String visit(MessageSend n, Symbol thisScope) throws Exception {
 
-    //     // check if primary expression is class type
-    //     String type = n.f0.accept(this, thisScope);
-    //     SymbolClass thisClass = (SymbolClass) table.get(type);
-    //     if (thisClass == null) 
-    //         throw new Exception("Operator . unavailable on type: "+type+" in "+thisScope);
+        // check the method's class and offset
+        String expressionRegister = n.f0.accept(this, thisScope);
+        String methodName = n.f2.accept(this, thisScope);
+
+        SymbolClass thisClass = (SymbolClass) table.get(this.thisIdClass);
+        SymbolMethod thisMethod = (SymbolMethod) thisClass.getMethod_r(methodName);
+        int methodOffset = thisMethod.offset/8;        
+
+        // debug emit
+        emit("\t; "+thisClass.name+"."+thisMethod.name+" : "+methodOffset+"\n");
+
+        // load pointer of method from v table
+        BITCAST(LLVM_PTR, expressionRegister, LLVM_PTR_PTR, getRegister());
+        LOAD(LLVM_PTR_PTR, currentRegister(), getRegister());
+        GETELEM(LLVM_PTR, currentRegister(), getRegister(), new Integer(methodOffset).toString());
+        LOAD(LLVM_PTR, currentRegister(), getRegister());
+
+        // cast to the arguments types
+        String llvmArgTypes = thisMethod.getLLVMArgTypes();
+        String bitcastTypes = "";
+        if (llvmArgTypes.equals("")){
+            bitcastTypes = java2LLVMtype(thisMethod.type)+" ("+LLVM_PTR+")";
+        } else {
+            bitcastTypes = java2LLVMtype(thisMethod.type)+" ("+LLVM_PTR+", "+llvmArgTypes+")";
+        }
+        BITCAST(LLVM_PTR, currentRegister(), bitcastTypes, getRegister()); 
+        String methodRegister = currentRegister();
         
-    //     // check if method is availble on that class
-    //     String method = n.f2.accept(this, thisScope);
-    //     SymbolMethod thisMethod = (SymbolMethod) thisClass.getMethod_r(method);
-    //     if (thisMethod == null) 
-    //         throw new Exception("Method "+method+"() is unavailable on type: "+type+" in "+thisScope);
-        
+        String callArgString = "";
+        if (n.f4.present()){
+            callArgString = n.f4.accept(this, thisScope);
+            String[] callArgStringSep = callArgString.split(", ");
+            String[] llvmArgTypesSep  = llvmArgTypes.split(", ");
+            String callArgTypeString = "";
 
-    //     // check for arguments on method
-    //     String argumentString = "";
-    //     String[] argumentStrings;
-    //     String declaredArgumentString = thisMethod.getStringArguments();
-    //     String[] declaredArgumentStrings = thisMethod.getStringArguments().split(", ");
-    //     if (n.f4.present()) {
-    //         argumentString = n.f4.accept(this, thisScope);
-    //         argumentStrings = n.f4.accept(this, thisScope).split(", ");
-            
+            for(int arg=0; arg<callArgStringSep.length; arg++){
+                callArgTypeString += llvmArgTypesSep[arg]+" "+callArgStringSep[arg]+", ";
+            }
+            if(callArgTypeString.endsWith(", ")) 
+                callArgTypeString = callArgTypeString.substring(0, callArgTypeString.length() - 2);
+            callArgString = LLVM_PTR+" "+expressionRegister+", "+callArgTypeString;
+        } else {
+            callArgString = LLVM_PTR+" "+expressionRegister;
+        }
+        System.out.println(callArgString);
 
-    //         // System.out.println(argumentString);
-    //         // System.out.println(argumentString.length());
-    //         // System.out.println(declaredArgumentString);
-    //         // System.out.println(argumentString.length());
-    //         // if (!declaredArgumentString.equals(argumentString))
-    //         if(argumentStrings.length == declaredArgumentStrings.length && !declaredArgumentStrings[0].equals("")){
-    //             int arg = 0;
-    //             for (Map.Entry<String, Symbol> entry : thisMethod.arguments.getSorted()) {
-    //                 if(!checkType(entry.getValue(), argumentStrings[arg], table))
-    //                     throw new Exception("Argument types do not match at Method "+method+"() in "+thisScope);
-    //                 arg++;
-    //             }
-    //         } else{
-    //             throw new Exception("Argument count do not match at Method "+method+"() in "+thisScope);
-    //         }
-    //     } 
-    //     else{
-    //         if (!declaredArgumentStrings[0].equals(""))
-    //             throw new Exception("Argument counts do not match at Method "+method+"() in "+thisScope);
-    //     }
-            
-        
+        // call method
+        CALL_METH(java2LLVMtype(thisMethod.type), methodRegister, callArgString, getRegister());
 
         
-    //     return thisMethod.type;
-    // }
+        this.thisIdClass = thisMethod.type;
+        return currentRegister();
+    }
 
+    
     /**
     * f0 -> IntegerLiteral()
     *       | TrueLiteral()
@@ -759,8 +803,6 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
 		if (returnPrimaryExpressionType == 3) {
 			// get identifier
             String[] typeRegister = getTypeRegister(expRegister, (SymbolMethod)thisScope, false);
-            // System.out.println(typeRegister[0]);
-            // System.out.println(typeRegister[1]);
             return typeRegister[1];
 		}
 		return expRegister;
@@ -791,14 +833,13 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
         return currentRegister();
     }
 
-    // /**
-    // * f0 -> "this"
-    // */
-    // public String visit(ThisExpression n, Symbol thisScope) throws Exception {
-    //     // this is methodClass type
-    //     SymbolMethod thisMethod = (SymbolMethod)thisScope;
-    //     return "Class "+thisMethod.methodClass.type;
-    // }
+    /**
+    * f0 -> "this"
+    */
+    public String visit(ThisExpression n, Symbol thisScope) throws Exception {
+        this.thisIdClass = this.thisClass_r;
+        return "%this";
+    }
 
     /**
      * f0 -> "new"
@@ -835,20 +876,31 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
     }
 
 
-    // /**
-    //  * f0 -> "new"
-    // * f1 -> Identifier()
-    // * f2 -> "("
-    // * f3 -> ")"
-    // */
-    // public String visit(AllocationExpression n, Symbol thisScope) throws Exception {
-    //     String type = n.f1.accept(this, thisScope);
-    //     // type must be class type
-    //     SymbolClass thisClass = (SymbolClass) table.get(type);
-    //     if (thisClass == null)
-    //         throw new Exception("Wrong type "+type+" at Allocation Expression in "+thisScope);
-    //     return "Class "+thisClass.type;
-    // }
+    /**
+     * f0 -> "new"
+    * f1 -> Identifier()
+    * f2 -> "("
+    * f3 -> ")"
+    */
+    public String visit(AllocationExpression n, Symbol thisScope) throws Exception {
+        String identifier = n.f1.accept(this, thisScope);
+        // type must be class type
+        // System.out.println("EDOOOOOOOOOOOOOOOOO"+identifier);
+        SymbolClass thisClass = (SymbolClass) table.get(identifier);
+        String className = thisClass.name;
+        int classOffsset = thisClass.getOffset() + 8;
+        int methodsNum   = thisClass.methods.size();
+        this.thisIdClass = thisClass.name;
+        
+        CALLOC(getRegister(), "1", new Integer(classOffsset).toString());
+        String classRegister = currentRegister();
+        BITCAST(LLVM_PTR, classRegister, LLVM_PTR_PTR, getRegister());
+        String classPtrRegister = currentRegister();
+        GETELEMVTABLE(getRegister(), className, methodsNum);
+        STORE(LLVM_PTR_PTR, currentRegister(), classPtrRegister);
+
+        return classRegister;
+    }
 
     /**
      * f0 -> "!"
