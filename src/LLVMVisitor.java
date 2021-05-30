@@ -38,7 +38,7 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
         String filename = table.name;
         filename = filename.substring(0, filename.lastIndexOf(".java"));
         filename = filename+".ll";
-        System.out.println(filename);
+        // System.out.println(filename);
         this.out = new PrintWriter(filename);
 
         // create v_table
@@ -79,8 +79,33 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
             return LLVM_PTR;
     }
 
+    static public String argsJava2LLVMtype(String argumentsString){
+        String llmvArgs = "(i8*";
+        String[] argumentsStrings = argumentsString.split(", ");
+        if (argumentsStrings[0].equals("")){ //no arguments
+            return llmvArgs += ")*";
+        }
+        for(String argument : argumentsStrings){
+            llmvArgs += ", "+LLVMVisitor.java2LLVMtype(argument);
+        }
+        if(llmvArgs.endsWith(", ")) 
+            llmvArgs = llmvArgs.substring(0, llmvArgs.length() - 2);
+        return llmvArgs += ")*";
+    }
+
     void STORE(String type, String item, String to) throws Exception{
         emit("\tstore "+type+" "+item+", "+type+"* "+to+"\n");
+    }
+
+    void ALLOCA(String type, String to) throws Exception {
+        emit("\t"+to+" = alloca "+type+"\n");
+        // Init 0 if i32 or i1
+        if (type.equals(LLVM_INT))
+            STORE(type, "0", to);
+        else if (type.equals(LLVM_BOOL))
+            STORE(type, "false", to);
+        else if (type.equals(LLVM_PTR))
+            STORE(type, "null", to);
     }
 
     void LOAD(String type, String from, String to) throws Exception{
@@ -159,6 +184,8 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
         emit("\t"+to+" = call "+type+" "+methodRegister+"("+arguments+")\n");
     }
 
+    
+
     String currentRegister() {
         return "%_"+this.uniqueRegiserCounter;
     }
@@ -193,19 +220,6 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
         emit(label+":\n");
     }
 
-    String argsJava2LLVMtype(String argumentsString){
-        String llmvArgs = "(i8*";
-        String[] argumentsStrings = argumentsString.split(", ");
-        if (argumentsStrings[0].equals("")){ //no arguments
-            return llmvArgs += ")*";
-        }
-        for(String argument : argumentsStrings){
-            llmvArgs += ", "+java2LLVMtype(argument);
-        }
-        if(llmvArgs.endsWith(", ")) 
-            llmvArgs = llmvArgs.substring(0, llmvArgs.length() - 2);
-        return llmvArgs += ")*";
-    }
 
     void emit(String buffer) throws Exception {
         this.out.print(buffer);
@@ -222,31 +236,17 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
         String methodName           = null;
         String llvmArgumentsTypes   = null;
         for (Map.Entry<String, Symbol> classEntry : this.table.getSorted()) {
-            // System.out.println(classEntry.getValue().name);
-            // System.out.println(thisClassMethods.size());
             
             thisClass        = (SymbolClass) classEntry.getValue();
             className        = thisClass.name;
             thisClassMethods = thisClass.methods;
-            methodsNum       = thisClassMethods.size();
+            methodsNum       = thisClass.virtualTable.size();
             emit("@."+className+"_vtable = ");
             if (thisClass.getMethod("main") != null && methodsNum == 1){ //main method
                 emit("global [0 x i8*] [");
             } else {
-                emit("global ["+methodsNum+" x i8*] [");
-                methodNum = 0;
-                for (Map.Entry<String, Symbol> methodEntry : thisClassMethods.getSorted()) {
-                    thisMethod = (SymbolMethod) methodEntry.getValue();
-                    methodName = thisMethod.name;
-                    llvmArgumentsTypes = argsJava2LLVMtype(thisMethod.getStringArguments());
-                    emit("i8* bitcast (");
-                    emit(java2LLVMtype(thisMethod.type)+" ");
-                    emit(llvmArgumentsTypes+" ");
-                    emit("@"+className+"."+methodName+" to i8*)");
-                    methodNum++;
-                    if (methodNum != methodsNum)
-                        emit(", ");
-                }   
+                emit("global ["+methodsNum+" x i8*] [");  
+                emit(thisClass.virtualTable.toString());
             }
             emit("]\n");
         }
@@ -270,7 +270,7 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
             }
             return typeRegister;
         } 
-        // else the variable is laceted in the class scope
+        // else the variable is loceted in the class scope
         thisVariable = (SymbolVariable) thisMethod.getVariable_r(identifier);
         if (thisVariable != null){
             this.thisIdClass = thisVariable.type;
@@ -349,7 +349,7 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
         for (Map.Entry<String, Symbol> variableEntry : thisMethod.variables.getSorted()) {
             thisVariable = (SymbolVariable) variableEntry.getValue();
             // alloca
-            emit("\t%"+thisVariable.name+" = alloca "+java2LLVMtype(thisVariable.type)+"\n");
+            ALLOCA(java2LLVMtype(thisVariable.type), "%"+thisVariable.name);
         }   
 
         // statments
@@ -424,9 +424,8 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
         for (Map.Entry<String, Symbol> argumentEntry : thisMethod.arguments.getSorted()) {
             thisArgument = (SymbolVariable) argumentEntry.getValue();
             // alloca
-            emit("\t%"+thisArgument.name+" = alloca "+java2LLVMtype(thisArgument.type)+"\n");
+            ALLOCA(java2LLVMtype(thisArgument.type), "%"+thisArgument.name);
             // store
-            // emit("\tstore "+java2LLVMtype(thisArgument.type)+" %."+thisArgument.name+", "+java2LLVMtype(thisArgument.type)+"* %"+thisArgument.name+"\n");
             STORE(java2LLVMtype(thisArgument.type), "%."+thisArgument.name, "%"+thisArgument.name);
         }   
 
@@ -435,7 +434,8 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
         for (Map.Entry<String, Symbol> variableEntry : thisMethod.variables.getSorted()) {
             thisVariable = (SymbolVariable) variableEntry.getValue();
             // alloca
-            emit("\t%"+thisVariable.name+" = alloca "+java2LLVMtype(thisVariable.type)+"\n");
+            ALLOCA(java2LLVMtype(thisVariable.type), "%"+thisVariable.name);
+
         }   
 
         // statements
@@ -604,7 +604,7 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
         
         GOTO(label1);
         emitLabel(label1);
-        BR(expressionRegister1, label2, label3);
+        BR(expressionRegister1, label2, label4);
         emitLabel(label2);
         String expressionRegister2 = n.f2.accept(this, thisScope);
         GOTO(label3);
@@ -613,10 +613,19 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
         emitLabel(label4);
 
         PHI(LLVM_BOOL, "0", expressionRegister2, label1, label3, getRegister());
+    
         // AND(LLVM_BOOL, getRegister(), expressionRegister1, expressionRegister2);
         return currentRegister();
     }
     
+    // public String visit(AndExpression n, Symbol thisScope) throws Exception {
+    //     String expressionRegister1 = n.f0.accept(this, thisScope);
+    //     String expressionRegister2 = n.f2.accept(this, thisScope);
+        
+    //     AND(LLVM_BOOL, getRegister(), expressionRegister1, expressionRegister2);
+    //     return currentRegister();
+    // }
+
     /**
      * f0 -> PrimaryExpression()
     * f1 -> "<"
@@ -774,7 +783,7 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
         } else {
             callArgString = LLVM_PTR+" "+expressionRegister;
         }
-        System.out.println(callArgString);
+        // System.out.println(callArgString);
 
         // call method
         CALL_METH(java2LLVMtype(thisMethod.type), methodRegister, callArgString, getRegister());
@@ -885,11 +894,10 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
     public String visit(AllocationExpression n, Symbol thisScope) throws Exception {
         String identifier = n.f1.accept(this, thisScope);
         // type must be class type
-        // System.out.println("EDOOOOOOOOOOOOOOOOO"+identifier);
         SymbolClass thisClass = (SymbolClass) table.get(identifier);
         String className = thisClass.name;
         int classOffsset = thisClass.getOffset() + 8;
-        int methodsNum   = thisClass.methods.size();
+        int methodsNum   = thisClass.virtualTable.size();
         this.thisIdClass = thisClass.name;
         
         CALLOC(getRegister(), "1", new Integer(classOffsset).toString());

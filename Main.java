@@ -42,7 +42,7 @@ public class Main {
                 root.accept(checkTypeVisitor, null);
                 
                 // Print offsets
-                System.out.println(table);
+                // System.out.println(table);
 
                 // LLVM visitor generates LLVM IR
                 LLVMVisitor llvmVisitor = new LLVMVisitor(table);

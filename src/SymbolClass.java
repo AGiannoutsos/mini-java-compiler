@@ -10,6 +10,10 @@ public class SymbolClass extends Symbol{
     int methodsOffset;
     boolean variablesOffsetChecked;
     boolean methodsOffsetChecked;
+    boolean virtualTableChecked;
+
+    // virtual table for llvm ir
+    VirtualTable virtualTable;
 
     public SymbolClass(String name, SymbolClass parentClass, int offset){
         super(name, name, offset);
@@ -20,6 +24,9 @@ public class SymbolClass extends Symbol{
         this.methodsOffset = 0;
         this.variablesOffsetChecked = false;
         this.methodsOffsetChecked = false;
+        this.virtualTableChecked = false;
+
+        this.virtualTable = new VirtualTable(name);
     }
 
     public SymbolClass(String name, int offset){
@@ -31,6 +38,21 @@ public class SymbolClass extends Symbol{
         this.methodsOffset = 0;
         this.variablesOffsetChecked = false;
         this.methodsOffsetChecked = false;
+
+        this.virtualTable = new VirtualTable(name);
+    }
+
+    void updateVirtualTable_r(int offset, SymbolMethod method){
+        if (this.virtualTableChecked == false){
+            if(this.parentClass!=null)
+                this.virtualTable = parentClass.updateVirtualTable(this.virtualTable);
+            this.virtualTableChecked = true;
+        }
+        this.virtualTable.put(offset, method);
+    }
+
+    VirtualTable updateVirtualTable(VirtualTable childClassVirtualTable){
+        return childClassVirtualTable.fillTable(this.virtualTable);
     }
 
     @Override
@@ -43,24 +65,9 @@ public class SymbolClass extends Symbol{
                 string += "\n"+this.name+"." + entry.getValue().toString();
             string += "\n---Methods---";
             for (Map.Entry<String, Symbol> entry : this.methods.getSorted()) 
-                if (!(entry.getValue().overrided))
-                    string += "\n"+this.name+"." + entry.getValue().toString();
-        // }
-        // else{
-        //     string += " extends ";
-        //     // for (Map.Entry<String, Symbol> entry : this.parentClass.variables.getSorted())
-        //     //     string += this.parentClass.name+"." + entry.getValue().name + " : "+entry.getValue().getOffset()+"\n";
-        //     string += parentClass.toString();
-        //     string += "\n---Variables---";
-        //     for (Map.Entry<String, Symbol> entry : this.variables.getSorted())
-        //         string += "\n"+this.name+"." + entry.getValue().toString();
-        //     string += "\n---Methods---";
-        //     for (Map.Entry<String, Symbol> entry : this.methods.getSorted())
-        //         if (!(entry.getValue().overrided))
-        //             string += "\n"+this.name+"." + entry.getValue().toString();
-        // }
-        // debug
-        // string += this.debugPrint();
+                // if (!(entry.getValue().overrided))
+                string += "\n"+this.name+"." + entry.getValue().toString();
+
         return string+"\n";
     }
 
@@ -102,11 +109,6 @@ public class SymbolClass extends Symbol{
             offset = 8;
         }
 
-        // if (parentClass!=null){
-        //     s = variables.put(key, new SymbolVariable(var.type, var.name, this.variablesOffset + parentClass.variablesOffset));
-        // } else {
-        //     s = 
-        // }
         Symbol s = variables.put(key, new SymbolVariable(var.type, var.name, this.variablesOffset));
         this.variablesOffset += offset;
         return s;
@@ -123,15 +125,22 @@ public class SymbolClass extends Symbol{
         SymbolMethod meth = (SymbolMethod) method;
         int offset = 8;
         // if overrided
-        if (meth.overrided)
+        if (meth.overrided){
             offset = 0;
+            // assign virtual offset of the v table
+            // get overidden offset
+            meth.offset = this.getMethod_r(meth.name).offset;
+            Symbol s = methods.put(key, meth);
+            updateVirtualTable_r(meth.offset, meth);
+            this.methodsOffset += offset;
+            return s;
+        }
         
-        // if (parentClass!=null){
-        //     meth.offset = this.methodsOffset + parentClass.methodsOffset;
-        // } else {
-        // }
+
         meth.offset = this.methodsOffset;
         Symbol s = methods.put(key, meth);
+        // put also in virtual table based on the offset
+        updateVirtualTable_r(meth.offset, meth);
         this.methodsOffset += offset;
         return s;
     }
@@ -171,6 +180,8 @@ public class SymbolClass extends Symbol{
                 var = null;
         return var;
     }
+
+
 
 
 }

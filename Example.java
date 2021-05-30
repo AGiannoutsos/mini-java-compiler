@@ -1,97 +1,104 @@
-class MulInherit {
+class Main {
   public static void main(String[] args) {
-    // int test;
-    // int best;
-    // boolean a;
-    // a = true;
-    // a = a && a;
-    // test = 10;
-    // if (test < 20) 
-    //   System.out.println(1000);
-    // else 
-    //   System.out.println(10);
-    // System.out.println((666+test)+1000);
-    // System.out.println(777-10);
-    // System.out.println((test*10));
-    // System.out.println(best);
-    // while(test < 5){
-    //   test = test + 1;
-    //   System.out.println(test);
-    // }
-
-    int[] arr;
     A a;
-    int i;
-    boolean boo;
-    // arr = new int[2];
-    // arr[0] = 100;
-    // arr[(1-1)] = arr[0];
-    // // arr[(1-1)] = 20;
-    // System.out.println(arr[0]);
-    // System.out.println(arr[1]);
-    // System.out.println(arr.length);
-
+    C c;
+    D d;
+    E e;
+    boolean dummy;
     a = new A();
-    
-    i = (a.foo(74, (new A()).foo(1, new A(), new C()), new C())).bla();
-    System.out.println(i);
-    
-    boo = (a.bo1()) && (a.bo2());
-    if (boo) 
-      System.out.println(3333);
-    else 
-      System.out.println(4444);
+    dummy = a.set_x();
+    System.out.println(a.x());
+    System.out.println(a.y());
+    a = new B();
+    dummy = a.set_x();
+    System.out.println(a.x());
+    System.out.println(a.y());
 
+    c = new C();
+    System.out.println(c.get_method_x());
+    System.out.println(c.get_class_x());
+
+    d = new D();
+    dummy = d.set_int_x();
+    if (d.get_class_x2()) {
+      System.out.println(1);
+    } else {
+      System.out.println(0);
+    }
+
+    e = new E();
+    dummy = e.set_int_x();
+    if (e.get_class_x2()) {
+      System.out.println(1);
+    } else {
+      System.out.println(0);
+    }
+    dummy = e.set_bool_x();
+    if (e.get_bool_x()) {
+      System.out.println(1);
+    } else {
+      System.out.println(0);
+    }
   }
 }
 
-class A{
-  int a1;
-  int a2;
-  boolean a3;
-  int a4;
+class A {
+  int x;
+  // Verify that this is 0 (since it's not set)
+  int y;
 
-  public boolean bo1(){
-    System.out.println(1111);
+  public boolean set_x() {
+    x = 1;
     return true;
-  } 
-  public boolean bo2(){
-    System.out.println(2222);
-    return false;
-  } 
-  public A foo(int aa, A bb, C cc){ 
-                                        A a;
-                                        a1=aa; 
-                                        System.out.println(777);
-                                        System.out.println(a2);
-                                        // a.a1 = aa;
-                                        a = new A();
-                                        return a;}
-  public int bla(){ int kk; kk=44; return 55;}
-  public int[] foo2(int[] arr){ return new int[10];}
+  }
+
+  public int x() { return x; }
+
+  public int y() { return y; }
 }
 
-class B extends A{
-  int a5;
-  public int bla(){ C c; return 66;}
-  public int bla2(){ C c; return 1;}
+class B extends A {
+  int x;
+
+  public boolean set_x() {
+    x = 2;
+    return true;
+  }
+
+  public int x() { return x; }
+  // public int z() { return x; }
 }
 
+class C {
+  int x;
 
-// define i32 @A.foo(i8* %this) {
-  // 	ret i32 0
-  // }
-  
-  // define i32 @A.bla(i8* %this) {
-    // 	ret i32 0
-    // }
-    
-    // define i32 @A.foo2(i8* %this) {
-      // 	ret i32 0
-      // }
-      
-      // define i32 @B.bla(i8* %this) {
-        // 	ret i32 0
-        // }
-class C{
+  public int get_class_x() { return x; }
+
+  public int get_method_x() {
+    int x;
+    x = 3;
+    return x;
+  }
+
+  public boolean set_int_x() {
+    x = 20;
+    return true;
+  }
+}
+
+class D extends C {
+  boolean x;
+
+  public boolean get_class_x2() { return x; }
+}
+
+class E extends D {
+  boolean x;
+
+  public boolean set_bool_x() {
+    x = true;
+    return true;
+  }
+
+  public boolean get_bool_x() { return x; }
 }
