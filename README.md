@@ -29,9 +29,12 @@ In `SumbolMethods` are stored all the methods of the class. This object also sto
 Both `SYmbolClass` and `SymbolMethod` implement setters and getters according to their needs.
 
 ### About the Virtual Table
+The `VirtulaTable` is a `TreeMap` data structure that holds all of a class's methods.
+It recursively records the parent classes' methods, and if a child class overrides one of them, the information is given to the table. 
 
 ### About the visitors
-As for the visitors, there are 3 of them that implement different processes of semantic checking. Firstly the parse tree is visited by the `ClassDeclarationVisitor` is responsible 
+As for the visitors, there are 4 of them that implement different processes of semantic checking and for the LLVM IR generation. Firstly the parse tree is visited by the `ClassDeclarationVisitor` is responsible 
 for adding to the `SymbolTable` all 
 the class declarations. Then the parse tree is visited by the `FillVisitor` that fills all the classes with their variables and methods and also fills the arguments and the variables of the methods too.
-Finally, the parse tree is visited by the `CheckTypeVisitor` which performs type checking of the expressions and the statements of the methods.
+Then, the parse tree is visited by the `CheckTypeVisitor` which performs type checking of the expressions and the statements of the methods.
+Finally, the LLVM visitor parses the tree and creates LLVM IR based on the data in the Symbol and Virtual tables. 
