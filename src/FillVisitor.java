@@ -141,7 +141,6 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
         else
             thisMethod = new SymbolMethod(type, name, true, thisClass); // overrided  
             
-        thisClass.putMethod(name, thisMethod);
 
         // fill parameters
         this.argumentVarOffsset = 0;
@@ -211,6 +210,7 @@ public class FillVisitor extends GJDepthFirst<String, Symbol> {
             parentClass = parentClass.parentClass;
         } 
 
+        thisClass.putMethod(name, thisMethod);
 
 
         return null;

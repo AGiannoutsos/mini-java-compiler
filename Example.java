@@ -1,104 +1,35 @@
-class Main {
-  public static void main(String[] args) {
-    A a;
-    C c;
-    D d;
-    E e;
-    boolean dummy;
-    a = new A();
-    dummy = a.set_x();
-    System.out.println(a.x());
-    System.out.println(a.y());
-    a = new B();
-    dummy = a.set_x();
-    System.out.println(a.x());
-    System.out.println(a.y());
+	// The classes are basically the same as the BinaryTree 
+	// file except the visitor classes and the accept method
+	// in the Tree class
 
-    c = new C();
-    System.out.println(c.get_method_x());
-    System.out.println(c.get_class_x());
-
-    d = new D();
-    dummy = d.set_int_x();
-    if (d.get_class_x2()) {
-      System.out.println(1);
-    } else {
-      System.out.println(0);
-    }
-
-    e = new E();
-    dummy = e.set_int_x();
-    if (e.get_class_x2()) {
-      System.out.println(1);
-    } else {
-      System.out.println(0);
-    }
-    dummy = e.set_bool_x();
-    if (e.get_bool_x()) {
-      System.out.println(1);
-    } else {
-      System.out.println(0);
-    }
-  }
+class Main{
+	public static void main(String[] aa){
+		D a;
+		a = new D();
+		System.out.println((a.a()));
+	}
 }
 
-class A {
-  int x;
-  // Verify that this is 0 (since it's not set)
-  int y;
-
-  public boolean set_x() {
-    x = 1;
-    return true;
-  }
-
-  public int x() { return x; }
-
-  public int y() { return y; }
+class A{
+	int a;
+	public int a() {return a;}
 }
 
-class B extends A {
-  int x;
-
-  public boolean set_x() {
-    x = 2;
-    return true;
-  }
-
-  public int x() { return x; }
-  // public int z() { return x; }
+class B extends A{
+	int b;
+	public int b() {return a;}
+	public int a() {return a;}
 }
 
-class C {
-  int x;
+class C extends B{
+	int c;
+	public int c() {return a;}
+	// public int a() {return a;}
 
-  public int get_class_x() { return x; }
-
-  public int get_method_x() {
-    int x;
-    x = 3;
-    return x;
-  }
-
-  public boolean set_int_x() {
-    x = 20;
-    return true;
-  }
 }
 
-class D extends C {
-  boolean x;
-
-  public boolean get_class_x2() { return x; }
-}
-
-class E extends D {
-  boolean x;
-
-  public boolean set_bool_x() {
-    x = true;
-    return true;
-  }
-
-  public boolean get_bool_x() { return x; }
+class D extends C{
+	int d;
+	public int a() {return a;}
+	public int d() {return d;}
 }

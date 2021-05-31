@@ -14,4 +14,6 @@ mainexe
 *.ll
 test_java_files
 testllvm.sh
+testllvm2.sh
 Example_copy.java
+minijava-examples-new/.ll

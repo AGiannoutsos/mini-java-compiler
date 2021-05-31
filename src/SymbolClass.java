@@ -65,7 +65,7 @@ public class SymbolClass extends Symbol{
                 string += "\n"+this.name+"." + entry.getValue().toString();
             string += "\n---Methods---";
             for (Map.Entry<String, Symbol> entry : this.methods.getSorted()) 
-                // if (!(entry.getValue().overrided))
+                if (!(entry.getValue().overrided))
                 string += "\n"+this.name+"." + entry.getValue().toString();
 
         return string+"\n";
@@ -133,6 +133,7 @@ public class SymbolClass extends Symbol{
             Symbol s = methods.put(key, meth);
             updateVirtualTable_r(meth.offset, meth);
             this.methodsOffset += offset;
+            // System.out.println(meth+ meth.methodClass.name);
             return s;
         }
         
