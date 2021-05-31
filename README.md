@@ -1,5 +1,5 @@
 # mini-java-compiler
-Mini-Java to LLVM IR compiler semester project for the compilers course at the University of Athens 
+Mini-Java to LLVM IR compiler, a semester project for the compilers course at the University of Athens 
 
 
 ## Compilation and run
