@@ -45,8 +45,8 @@ public class Main {
                 // System.out.println(table);
 
                 // LLVM visitor generates LLVM IR
-                LLVMVisitor llvmVisitor = new LLVMVisitor(table);
-                root.accept(llvmVisitor, null);
+                LLVMCodeGenVisitor llvmCodeGenVisitor = new LLVMCodeGenVisitor(table);
+                root.accept(llvmCodeGenVisitor, null);
 
     
             }

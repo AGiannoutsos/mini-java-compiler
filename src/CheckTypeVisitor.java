@@ -48,45 +48,6 @@ public class CheckTypeVisitor extends GJDepthFirst<String, Symbol> {
         return n.f0.toString();
     }
 
-    // /**
-    // * f0 -> Type()
-    // * f1 -> Identifier()
-    // * f2 -> ";"
-    // */
-    // @Override
-    // public String visit(VarDeclaration n, Symbol thisScope) throws Exception {
-    //     String type = n.f0.accept(this, thisScope);
-
-    //     // check scope of variable name
-    //     String name = n.f1.accept(this, thisScope);
-
-    //     if ( thisScope.getVariable(name) != null)
-    //        throw new Exception("Variable "+type+" "+name+" already declared in "+thisScope);
-        
-    //     thisScope.putVariable(name, new SymbolVariable(type, name, 0));
-
-    //     return null;
-    // }
-
-    // /**
-    // * f0 -> ArrayType()
-    // *       | BooleanType()
-    // *       | IntegerType()
-    // *       | Identifier()
-    // */
-    // @Override
-    // public String visit(Type n, Symbol thisScope) throws Exception {
-    //     String type = n.f0.accept(this, thisScope);
-    //     if (type.equals(Symbol.INT) || type.equals(Symbol.BOOL) || type.equals(Symbol.ARR)){
-    //         return type;
-    //     }
-    //     else{
-    //         if (table.get(type) != null)
-    //             return type;
-    //         else
-    //             throw new Exception("Unknown type: "+type);
-    //     }
-    // }
 
     /**
      * f0 -> "int"

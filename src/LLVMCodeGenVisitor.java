@@ -8,7 +8,7 @@ import java.util.Deque;
 import java.util.ArrayDeque;
 
 
-public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
+public class LLVMCodeGenVisitor extends GJDepthFirst<String, Symbol> {
 
     SymbolTable table;
     int classOffsset;
@@ -25,7 +25,7 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
     static String LLVM_PTR  = "i8*";
     static String LLVM_PTR_PTR  = "i8**";
 
-    public LLVMVisitor(SymbolTable table) throws Exception {
+    public LLVMCodeGenVisitor(SymbolTable table) throws Exception {
         this.table = table;
         this.classOffsset = 0;
         this.uniqueRegiserCounter = 0;
@@ -86,7 +86,7 @@ public class LLVMVisitor extends GJDepthFirst<String, Symbol> {
             return llmvArgs += ")*";
         }
         for(String argument : argumentsStrings){
-            llmvArgs += ", "+LLVMVisitor.java2LLVMtype(argument);
+            llmvArgs += ", "+LLVMCodeGenVisitor.java2LLVMtype(argument);
         }
         if(llmvArgs.endsWith(", ")) 
             llmvArgs = llmvArgs.substring(0, llmvArgs.length() - 2);

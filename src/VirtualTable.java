@@ -30,9 +30,9 @@ public class VirtualTable extends TreeMap<Integer, SymbolMethod>{
         for (SymbolMethod thisMethod : this.values()) {
             methodName = thisMethod.name;
             className  = thisMethod.methodClass.name;
-            llvmArgumentsTypes = LLVMVisitor.argsJava2LLVMtype(thisMethod.getStringArguments());
+            llvmArgumentsTypes = LLVMCodeGenVisitor.argsJava2LLVMtype(thisMethod.getStringArguments());
             vtableString += "i8* bitcast (";
-            vtableString += LLVMVisitor.java2LLVMtype(thisMethod.type)+" ";
+            vtableString += LLVMCodeGenVisitor.java2LLVMtype(thisMethod.type)+" ";
             vtableString += llvmArgumentsTypes+" ";
             vtableString += "@"+className+"."+methodName+" to i8*), ";
         }  
